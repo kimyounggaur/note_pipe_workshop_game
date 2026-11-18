@@ -1,0 +1,32 @@
+<svg class="svg-sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8M5 10v11h5v-7h4v7h5V10"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><path d="m9 3-1 3-3 1-2 4 2 2v3l4 3 3-1 3 1 4-3v-3l2-2-2-4-3-1-1-3Z"/><circle cx="12" cy="11" r="3"/></symbol>
+<symbol id="i-fullscreen" viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m8 0h5v-5"/></symbol>
+<symbol id="i-water" viewBox="0 0 24 24"><path d="M12 2c-2 5-7 8-7 13a7 7 0 0 0 14 0c0-5-5-8-7-13Z"/><path d="M8 15c0 2 1 3 3 3"/></symbol>
+<symbol id="i-sound" viewBox="0 0 24 24"><path d="m4 9 5 0 5-5v16l-5-5H4ZM18 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M12 5v15M3 3c4 0 6 0 9 2 3-2 5-2 9-2v15c-4 0-6 0-9 2-3-2-5-2-9-2Z"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="m11 5-7 7 7 7m-7-7h17"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5L20 6"/></symbol>
+</defs></svg>
+<main id="screen"><div id="screenContent"></div></main>
+<main id="app" hidden>
+  <header class="hud" id="hud">
+    <button type="button" class="iconbtn" id="home" aria-label="작업일 지도로"><svg><use href="#i-home"/></svg></button>
+    <button id="soundChip" class="chipbtn" type="button">소리 켜기</button><div class="hud-center"><h1 id="dayName">음표 파이프 공방</h1><div class="dots" id="dots" role="img" aria-label="의뢰 진행"></div></div>
+    <button type="button" class="iconbtn" id="openSettings" aria-label="설정"><svg><use href="#i-settings"/></svg></button>
+    <button type="button" class="iconbtn" id="fullscreen" aria-label="전체 화면 (0)"><svg><use href="#i-fullscreen"/></svg></button>
+  </header>
+  <section class="card brief" id="brief" aria-label="의뢰"><span class="tag" id="askTag"></span><p id="briefText"></p><button type="button" class="second" id="hear" hidden>의뢰 듣기</button></section>
+  <section class="card stage" id="stage" aria-label="설계도와 물길"><svg id="score" role="img"></svg><div class="pipes" id="pipesWrap"><svg id="pipes" role="img"></svg><div id="joints"></div><div class="veil" id="veil" hidden>물길은 답한 뒤에 보여요</div></div></section>
+  <p class="readout" id="readout" role="status"><span id="readoutText"></span></p>
+  <div class="controls" id="controls">
+    <div class="grp" id="g-count" hidden><div class="row" id="choices" role="radiogroup" aria-label="보기"></div><div class="row"><button type="button" class="second" id="countTrial" hidden>물 틀기</button><button type="button" class="primary" id="confirm">확정</button></div></div>
+    <div class="grp" id="g-pipe" hidden><div class="row" id="tools" role="radiogroup" aria-label="도구"><button type="button" class="opt" role="radio" id="tool-gap" data-tool="gap">떼기</button><button type="button" class="opt" role="radio" id="tool-slur" data-tool="slur">잇기</button><button type="button" class="opt" role="radio" id="tool-tie" data-tool="tie">붙이기</button></div><div class="row"><button type="button" class="second" id="trial">물 틀기</button><button type="button" class="primary" id="inspect">검수</button></div></div>
+    <div class="grp" id="g-valve" hidden><button type="button" id="pad">밸브</button><div class="side"><button type="button" class="second" id="machine">기계 밸브</button><button type="button" class="second" id="deliverBtn">납품</button></div></div>
+    <div class="grp" id="g-deliver" hidden><div class="rec" id="rec"></div><div class="row"><button type="button" class="second" id="again">다시 듣기</button><button type="button" class="primary" id="next">다음 의뢰</button></div></div>
+    <div class="grp" id="g-scene" hidden><div class="row"><button type="button" class="opt" id="sceneA">가</button><button type="button" class="opt" id="sceneB">나</button></div><div class="row"><button type="button" class="second" id="sceneTrial">물 틀기</button><button type="button" class="primary" id="sceneNext">알겠어요</button></div></div>
+    <div class="grp" id="g-free" hidden><div class="row" id="freeTools"><button type="button" class="opt" data-tool="gap">떼기</button><button type="button" class="opt" data-tool="slur">잇기</button><button type="button" class="opt" data-tool="tie">붙이기</button></div><div class="row"><button type="button" class="second" id="freeTrial">물 틀기</button><button type="button" class="primary" id="freeValve">밸브 연습</button></div></div>
+  </div>
+</main>
+<div class="sheet" id="overlay" hidden><div class="panel" id="overlayContent" role="dialog" aria-modal="true" tabindex="-1"></div></div>
+<div id="toast" role="status" hidden></div>

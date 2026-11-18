@@ -1,0 +1,8 @@
+.scene-switch{display:flex;gap:8px}.scene-switch button{min-height:44px;flex:1}.error-box{position:fixed;bottom:0;z-index:99;background:#fff;color:var(--bad);padding:16px;border:2px solid var(--bad)}
+.panel>button{min-height:48px;border:1px solid var(--steel);border-radius:10px;background:var(--steel-soft);font-size:15px;font-weight:700;padding:12px}
+.tutorial{outline:3px solid var(--brass);outline-offset:2px}
+.hud.nosound .hud-center h1{display:none}.hud.nosound .chipbtn{font-size:12px;padding:0 7px}
+@media(max-width:420px){.hud.nosound .hud-center{align-items:center}}
+@media(min-width:800px){#app{padding-top:8px;padding-bottom:8px}}
+html[data-large-text] #app{grid-template-rows:44px 68px minmax(271px,1fr) 60px 104px}
+html[data-large-text] body{overflow:auto}html[data-large-text] #app{min-height:620px}

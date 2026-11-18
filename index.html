@@ -1,0 +1,2059 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#14607c"><meta name="description" content="물길을 놓으며 붙임줄과 이음줄을 배우는 음악이론 게임. 7개 작업일, 49개 의뢰."><link rel="icon" href="data:,"><title>음표 파이프 공방 · 붙임줄과 이음줄</title><style>:root{
+  /* 배치: 한 화면 다섯 줄. HUD → 의뢰 카드 → 무대(설계도와 물길, 남는 높이) → 판독 줄 → 조작부(104px 고정). 한 가지 테마로 고정한다 */
+  --bg:#e6edf1; --panel:#ffffff; --line:#c6d3db; --ink:#15232c; --ink-2:#465864;
+  --pipe:#dfe7ec; --pipe-edge:#5d707d; --water:#1f86bf; --water-soft:#d2e8f4;
+  --brass:#8a5407; --brass-soft:#f4e3c1; --steel:#14607c; --steel-soft:#d9ebf2;
+  --good:#1f6e41; --warn:#8a4d00; --bad:#a83324;
+  --gap:8px;
+  --font:system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);word-break:keep-all;-webkit-text-size-adjust:100%;line-height:1.4;overflow:hidden;overscroll-behavior:none}
+body.short{--gap:6px}
+body.low{overflow:auto}
+body.low #app{height:545px}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:disabled{cursor:default}
+button:focus-visible{outline:3px solid var(--water);outline-offset:2px}
+#app{height:100%;max-width:720px;margin:0 auto;padding:var(--gap) 8px;display:grid;grid-template-rows:44px auto minmax(0,1fr) 40px 104px;gap:var(--gap)}
+.hud{display:flex;align-items:center;gap:8px;min-width:0}
+.hud h1{margin:0;font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+.dots{display:flex;gap:5px;flex:1 0 auto;justify-content:center}
+.dots i{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--ink-2)}
+.dots i.full{background:var(--good);border-color:var(--good)}
+.dots i.half{background:linear-gradient(90deg,var(--warn) 50%,transparent 50%);border-color:var(--warn)}
+.dots i.now{border-color:var(--steel);box-shadow:0 0 0 3px var(--steel-soft)}
+.chipbtn{flex:none;min-height:44px;padding:0 12px;border-radius:22px;border:1.5px solid var(--steel);background:var(--panel);color:var(--steel);font-size:13.5px;font-weight:800;white-space:nowrap}
+@media (max-width:419px){.hud.nosound h1{display:none}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.brief{display:flex;align-items:center;gap:8px;padding:0 10px;height:56px;overflow:hidden}
+body.short .brief{height:50px}
+.tag{flex:none;font-size:12px;font-weight:800;padding:3px 8px;border-radius:999px;background:var(--steel-soft);color:var(--steel)}
+.brief p{margin:0;flex:1;min-width:0;font-size:15px;font-weight:700;line-height:1.35}
+body.short .brief p{font-size:14px}
+.stage{min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center;padding:2px 0}
+svg{display:block;width:100%;flex:none}
+svg text{font-family:var(--font)}
+.staff{stroke:var(--ink-2);stroke-width:1}
+.clef{fill:none;stroke:var(--ink);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.clefDot{fill:var(--ink)}
+.bar{stroke:var(--ink);stroke-width:1.2}
+.barEnd{fill:var(--ink)}
+.meter{font-size:20px;font-weight:800;fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+.head{fill:var(--ink)}
+.head.open{fill:var(--panel);stroke:var(--ink);stroke-width:1.7}
+.stem{stroke:var(--ink);stroke-width:1.5}
+.flag{fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round}
+.dot{fill:var(--ink)}
+.curve{fill:none;stroke:var(--ink);stroke-width:1.7;stroke-linecap:round}
+.headline{stroke:var(--water);stroke-width:2;stroke-linecap:round;opacity:0}
+.running .headline{opacity:.9}
+.pipes{position:relative;flex:none;padding-bottom:42px}
+.pipes.veiled svg,.pipes.veiled #joints{visibility:hidden}
+.veil{position:absolute;left:8px;right:8px;top:6px;bottom:8px;border:1.5px dashed var(--pipe-edge);border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;font-size:13.5px;font-weight:700;color:var(--ink-2);background:var(--panel)}
+.veil[hidden]{display:none}
+.rowline{stroke:var(--line);stroke-width:1;stroke-dasharray:2 4}
+.rowname{font-size:12px;font-weight:700;fill:var(--ink-2)}
+.tube{fill:var(--pipe);stroke:var(--pipe-edge);stroke-width:1.5}
+.riser{fill:var(--pipe);stroke:var(--pipe-edge);stroke-width:1.5}
+.water{fill:var(--water)}
+.riserWater{fill:var(--water);opacity:0}
+.riserWater.on{opacity:1}
+.coupler{fill:var(--brass-soft);stroke:var(--brass);stroke-width:1.5}
+.seam{stroke:var(--pipe-edge);stroke-width:1.2;stroke-dasharray:2 3;opacity:.7}
+.bell .b{fill:var(--brass-soft);stroke:var(--brass);stroke-width:1.5}
+.bell text{font-size:12px;font-weight:800;fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+.bell .rip{fill:none;stroke:var(--water);stroke-width:3;opacity:0}
+.bell.rung .b{fill:var(--water-soft);stroke:var(--water);stroke-width:2.5}
+.bell.rung .rip{animation:rip .45s ease-out}
+@keyframes rip{0%{opacity:.9}100%{opacity:0}}
+.len{font-size:12px;font-weight:700;fill:var(--ink)}
+.hidebells .bell,.hidebells .len{visibility:hidden}
+.hidebells .bell.rung{visibility:visible}
+.ruler{stroke:var(--ink-2);stroke-width:1}
+.tick{font-size:12px;fill:var(--ink-2);font-variant-numeric:tabular-nums}
+.pbar{stroke:var(--ink-2);stroke-width:1;opacity:.55}
+#joints{position:absolute;inset:0}
+#joints[hidden]{display:none}
+.joint{position:absolute;top:0;bottom:0;transform:translateX(-50%);padding:0;border:0;background:transparent;display:flex;align-items:flex-end;justify-content:center;border-radius:8px}
+.chip{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:38px;border-radius:8px;font-size:12.5px;font-weight:800;line-height:1.15;border:1.5px dashed var(--ink-2);background:var(--panel);color:var(--ink)}
+.chip i{font-style:normal;font-size:12px;font-weight:700;color:var(--ink-2)}
+.chip.slur{border:1.5px solid var(--brass);background:var(--brass-soft)}
+.chip.tie{border:1.5px solid var(--steel);background:var(--steel);color:#fff}
+.chip.tie i{color:#d9ebf2}
+.joint.bad .chip{box-shadow:0 0 0 3px var(--bad)}
+.joint.ok .chip{box-shadow:0 0 0 3px var(--good)}
+.joint.shake .chip{animation:shake .36s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.readout{margin:0;height:40px;padding:0 6px;display:flex;align-items:center;font-size:13.5px;font-weight:700;line-height:1.42;overflow:hidden}
+.readout.good{color:var(--good)}.readout.warn{color:var(--warn)}.readout.bad{color:var(--bad)}
+.controls{height:104px;position:relative}
+.grp{position:absolute;inset:0;display:grid;gap:8px}
+.grp[hidden]{display:none}
+#g-count,#g-pipe,#g-deliver{grid-template-rows:44px 52px}
+.row{display:grid;gap:6px;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);min-width:0}
+.opt{border-radius:10px;border:1.5px solid var(--line);background:var(--panel);font-size:14px;font-weight:800;min-width:0;padding:0 4px}
+.opt[hidden]{display:none}
+.opt[aria-checked="true"]{border-color:var(--steel);background:var(--steel);color:#fff}
+.opt:disabled{background:var(--pipe);color:var(--ink-2);text-decoration:line-through}
+.primary{border:0;border-radius:10px;background:var(--steel);color:#fff;font-size:16px;font-weight:800;min-width:0}
+.second{border:1.5px solid var(--steel);border-radius:10px;background:var(--panel);color:var(--steel);font-size:14.5px;font-weight:800;padding:0 8px;min-width:0;min-height:44px}
+.second[hidden]{display:none}
+.second:disabled,.primary:disabled,.second[aria-disabled="true"]{opacity:.45}
+#g-valve{grid-template-columns:minmax(0,1fr) 92px}
+#pad{border:0;border-radius:14px;background:var(--steel);color:#fff;font-size:16px;font-weight:800;padding:0 10px;min-width:0;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+#pad.down{background:var(--ink)}
+.side{display:grid;grid-template-rows:1fr 1fr;gap:8px}
+.rec{display:flex;align-items:center;gap:6px;padding:0 4px;font-size:13.5px;font-weight:700;color:var(--ink-2);min-width:0}
+.rec b{color:var(--ink)}
+.sheet{position:fixed;inset:0;z-index:10;background:rgba(21,35,44,.5);display:flex;align-items:center;justify-content:center;padding:16px}
+.sheet[hidden]{display:none}
+.panel{width:100%;max-width:420px;max-height:100%;overflow:auto;background:var(--panel);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.panel h2{margin:0;font-size:17px;font-weight:800;text-wrap:balance}
+.panel p{margin:0;font-size:14px}
+.panel ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:13.5px}
+.panel li{display:flex;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:8px;background:var(--bg)}
+.panel .primary,.panel .second{min-height:52px}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14.5px;font-weight:700}
+.toggle button{min-width:84px}
+.small{font-size:12.5px;color:var(--ink-2)}
+@media (prefers-reduced-motion:reduce){.bell.rung .rip,.joint.shake .chip{animation:none}}
+/* JT8 · polished workshop surfaces. The fixed five-row work geometry remains C.10. */
+html{height:100%;height:100dvh}
+body{background-color:var(--bg);background-image:radial-gradient(ellipse at 8% 0%,#fff8 0,transparent 60%),linear-gradient(90deg,#5d707d08 1px,transparent 1px),linear-gradient(#5d707d08 1px,transparent 1px);background-size:auto,24px 24px,24px 24px}
+[hidden]{display:none!important}
+.svg-sprite{position:absolute;width:0;height:0;overflow:hidden}
+.iconbtn{width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:12px;background:#ffffffb8;color:var(--steel);padding:10px}
+.iconbtn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.hud{gap:6px}.hud-center{flex:1;min-width:0;display:flex;align-items:center;gap:8px}.hud h1{font-size:14px;flex:1}.dots{gap:4px;flex:none}.dots i{width:8px;height:8px}
+@media(max-width:420px){.hud-center{display:flex;flex-direction:column;justify-content:center;gap:3px;align-items:flex-start}.hud h1{flex:none;font-size:14px;max-width:100%}.dots{gap:5px}.dots i{width:7px;height:7px}}
+.card{box-shadow:0 2px 0 #5d707d0a,0 4px 14px #15232c04}.stage{border-radius:14px}.brief{border-left:3px solid var(--brass)}
+.primary{box-shadow:inset 0 1px 0 #fff2,0 3px 0 #104c63}.primary:active{box-shadow:inset 0 2px 3px #0002;transform:translateY(1px)}
+#pad{position:relative;border:3px solid #0e526c;box-shadow:inset 0 1px 0 #ffffff48,0 3px 0 #103d50;background:linear-gradient(160deg,#287891,var(--steel));padding:12px 44px}
+#pad:before,#pad:after{content:"";position:absolute;top:calc(50% - 18px);height:36px;width:9px;background:var(--brass-soft);border:2px solid var(--brass);border-radius:4px}#pad:before{left:12px}#pad:after{right:12px}#pad.down{background:#15232c;box-shadow:inset 0 3px 8px #0006}
+#screen{height:100%;overflow:auto;overscroll-behavior:contain;padding:24px 16px 40px}
+#screenContent{width:100%;max-width:820px;margin:auto}
+.screen-head,.screen-top{display:flex;align-items:center;gap:12px;margin-bottom:24px;justify-content:space-between}.screen-head h1,.screen-top h1{font-size:24px;line-height:1.25;margin:0}.screen-head .iconbtn,.screen-top .iconbtn{background:#fff}
+.overline,.eyebrow{font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);margin:0 0 12px}
+.hero{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:36px;box-shadow:0 12px 40px #15232c08;position:relative;overflow:hidden}
+.hero h1,.title-heading{font-size:clamp(32px,6vw,54px);line-height:1.14;letter-spacing:-.055em;margin:0 0 16px;color:var(--ink);font-weight:850}.hero h1 em,.title-heading em{font-style:normal;color:var(--steel)}
+.hero p{font-size:15px;color:var(--ink-2);line-height:1.7;margin:0;max-width:450px}.hero-art,.title-art{width:100%;max-width:620px;margin:20px auto 12px}
+.hero-actions,.actions,.button-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.hero-actions button,.actions button,.button-row button{min-height:52px;padding:12px 20px;flex:1}.hero .primary{font-size:17px}.hero-note{margin-top:20px!important;font-size:12px!important}
+.screen-grid,.day-grid,.card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.day-card,.book-card,.info-card,.scene-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;text-align:left;position:relative;overflow:hidden}.day-card{min-height:144px;display:flex;flex-direction:column;gap:8px}.day-card h2,.book-card h2{font-size:19px;margin:0;line-height:1.4}.day-card p,.book-card p,.info-card p{font-size:14px;margin:0;color:var(--ink-2);line-height:1.55}.day-card .day-no{font-size:12px;letter-spacing:.08em;color:var(--brass);font-weight:800}.day-card.locked{background:#e9eff2;border-style:dashed}.day-card:disabled{opacity:.8}.day-card.passed{border-color:var(--good)}.day-card strong{font-size:13px;color:var(--steel)}.day-card .stamp{position:absolute;right:16px;top:14px;color:var(--good);border:2px solid var(--good);border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:12px;transform:rotate(-10deg)}
+.book-card{min-height:190px}.book-card.locked{background:#edf1f3;color:var(--ink-2);border-style:dashed}.book-card .tag{display:inline-block;margin-bottom:12px}.book-card button{min-height:44px;margin-top:14px;padding:8px 14px}.book-card .back{border-top:1px solid var(--line);padding-top:12px;margin-top:12px;font-size:12px}.book-card svg{max-height:110px;margin:8px 0}
+.section-title{margin:24px 0 12px;font-size:18px;letter-spacing:-.02em}.intro{margin:0 0 20px;color:var(--ink-2);font-size:14px;line-height:1.7}.muted{color:var(--ink-2)}.small{line-height:1.6}.badge{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:30px;padding:4px 10px;font-size:12px;font-weight:700;background:#fff}.badge.good{color:var(--good);border-color:var(--good)}
+.form-row{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:58px;padding:8px 0;border-bottom:1px solid var(--line)}.form-row label{font-size:14px;font-weight:700}.form-row input[type=range]{width:45%;accent-color:var(--steel)}.form-row input[type=number]{width:90px;padding:10px;border:1px solid var(--line);border-radius:8px;font:inherit}.form-row select,select{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);max-width:100%}.form-row input[type=checkbox]{width:24px;height:24px;accent-color:var(--steel)}
+.panel{box-shadow:0 20px 80px #15232c40;border:1px solid var(--line);border-radius:20px;padding:24px}.panel h2{font-size:22px}.panel .row{min-height:44px}.panel .primary{padding:12px}.sheet{backdrop-filter:blur(3px)}
+.results{list-style:none;padding:0;margin:16px 0}.results li{display:flex;justify-content:space-between;gap:12px;padding:12px;border-bottom:1px solid var(--line);font-size:14px}.summary-number{font-size:48px;font-weight:850;color:var(--steel);letter-spacing:-.05em;line-height:1}.summary-number small{font-size:18px;font-weight:700;color:var(--ink-2);letter-spacing:0}.close-hero{text-align:center;padding:32px 16px}.close-hero h1{font-size:28px}.close-hero p{color:var(--ink-2);font-size:15px}.stamp-large{display:inline-flex;align-items:center;justify-content:center;width:90px;height:90px;border:3px double var(--good);border-radius:50%;color:var(--good);font-size:18px;font-weight:800;transform:rotate(-10deg);margin:12px}
+#g-scene,#g-free{grid-template-rows:44px 52px}.tutorial{box-shadow:0 0 0 3px var(--brass),0 0 0 6px var(--brass-soft)}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 32px);z-index:30;background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;box-shadow:0 6px 30px #0002}
+.test-table{width:100%;border-collapse:collapse;font-size:13px;background:#fff}.test-table th,.test-table td{text-align:left;padding:8px;border-bottom:1px solid var(--line)}.test-table .pass{color:var(--good)}.test-table .fail{color:var(--bad)}
+body.reduced *,body.reduced *:before,body.reduced *:after{animation-duration:0s!important;transition-duration:0s!important;scroll-behavior:auto!important}
+@media(max-width:540px){#screen{padding:16px 12px 28px}.hero{padding:24px 20px;border-radius:20px}.hero h1{font-size:36px}.screen-grid,.day-grid,.card-grid{grid-template-columns:1fr}.hero-actions{gap:8px}.hero-actions button{padding:12px 10px}.panel{padding:20px}.screen-head h1,.screen-top h1{font-size:21px}.day-card{min-height:116px;padding:16px}}
+@media(min-width:800px){#app{padding-top:16px;padding-bottom:16px}#screen{padding-top:40px}.hero{padding:40px 48px}.hero-art{margin-top:8px}.hero-actions{max-width:560px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:0s!important;transition-duration:0s!important}}
+
+/* 시작과 기록 화면: 작업 화면의 강철 · 놋쇠 · 물 색을 함께 쓴다. */
+#screenContent{height:100%;overflow-y:auto;overscroll-behavior:contain;padding:20px 18px 28px;max-width:720px;margin:0 auto;scrollbar-gutter:stable}
+#screenContent h1,#screenContent h2,#screenContent p{margin-top:0}
+#screenContent button{touch-action:manipulation}
+#screenContent .primary{min-height:52px;padding:10px 16px;display:flex;align-items:center;justify-content:center;gap:8px}
+#screenContent .second{display:flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:8px 12px}
+#screenContent button svg{width:20px;height:20px;flex:none;display:inline-block}
+.screen-header{display:flex;align-items:center;gap:14px;margin-bottom:24px;min-height:54px}
+.screen-header h1{font-size:23px;line-height:1.2;margin:0 0 5px;letter-spacing:-.6px}
+.screen-header p{font-size:12.5px;line-height:1.5;color:var(--ink-2);margin:0}
+#screenContent .back-button{padding:8px;min-width:44px;width:44px;border-radius:50%;align-self:flex-start;background:#f7fafb;border-color:var(--line)}
+.back-button span{display:none}
+.title-screen{max-width:440px;min-height:100%;margin:auto;display:flex;flex-direction:column;justify-content:center;padding:8px 0;text-align:center}
+.title-kicker{font-size:12px;letter-spacing:2.5px;font-weight:700;color:var(--steel);margin-bottom:12px}
+.title-screen h1{font-size:48px;line-height:1.12;letter-spacing:-2px;margin:0 0 14px;font-weight:900}
+.title-screen h1 span{color:var(--steel)}
+.title-description{font-size:14px;line-height:1.65;color:var(--ink-2);margin:0 0 4px}
+.title-screen .brand-art{width:100%;height:auto;max-height:210px;margin:0 auto 8px}
+.title-actions>.primary{width:100%;box-shadow:0 4px 0 #0f4559;font-size:17px;border-radius:12px}
+.title-subactions{margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.title-subactions .second{min-height:48px;background:#f8fbfc;border-color:var(--line)}
+.title-subactions small{font-size:11px;color:var(--ink-2)}
+.resume-caption{font-size:11.5px;color:var(--ink-2);margin:8px 0 -4px}
+.title-footnote{margin:24px 0 0!important;font-size:10.5px;color:var(--ink-2);line-height:1.5}
+.day-list{display:grid;gap:10px}
+.day-tile{display:flex;align-items:center;gap:12px;text-align:left;background:var(--panel);border:1.5px solid var(--line);border-radius:15px;padding:15px 12px;color:var(--ink);min-height:94px;transition:border-color .15s}
+.day-tile:not(:disabled):hover{border-color:var(--steel)}
+.day-tile.passed{border-color:#9cbcab}
+.day-number{display:flex;align-items:center;justify-content:center;flex:none;width:39px;height:44px;border-radius:12px;background:var(--steel-soft);color:var(--steel);font-size:23px;font-weight:850;font-variant-numeric:tabular-nums}
+.day-copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:5px}
+.day-copy strong{font-size:17px;letter-spacing:-.4px}
+.day-copy>span{font-size:12px;line-height:1.45;color:var(--ink-2)}
+.day-copy small{font-size:10.5px;color:var(--ink-2)}
+.day-stamp{flex:none;display:flex;align-items:center;justify-content:center;width:25px;height:25px;color:var(--ink-2)}
+.day-stamp.stamped{color:var(--good);border:1.5px solid currentColor;border-radius:50%;padding:2px}
+.day-tile.locked{opacity:.62;background:#e9eef1}
+.screen-note{font-size:12px;color:var(--ink-2);line-height:1.7;margin:20px 2px 0}
+.close-summary{text-align:center;padding:24px 14px;border-radius:18px;background:var(--panel);border:1px solid var(--line);margin-bottom:16px}
+.close-summary h2{font-size:21px;letter-spacing:-.5px;margin-bottom:9px}
+.close-summary p{margin-bottom:8px}
+.close-summary p strong{font-size:25px;color:var(--steel)}
+.summary-seal{width:60px;height:60px;display:grid;place-items:center;margin:0 auto 16px;border:2px solid var(--steel);border-radius:50%;color:var(--steel);background:var(--steel-soft)}
+.summary-seal svg{width:30px;height:30px}
+.close-summary.pass .summary-seal{border-color:var(--good);color:var(--good);background:#e7f1eb}
+.earned-stamp{display:inline-block;border:1.5px solid var(--good);color:var(--good);padding:5px 14px;border-radius:6px;font-weight:800;font-size:13px;margin-top:8px;transform:rotate(-4deg)}
+.result-list{list-style:none;margin:0 0 18px;padding:0;display:grid;gap:5px}
+.result-list li{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;background:#f8fbfc;font-size:12px}
+.result-list li>span:not(.result-dot){flex:1;color:var(--ink-2)}
+.result-list small{font-size:11px;color:var(--ink-2)}
+.result-dot{width:12px;height:12px;border:1.5px solid var(--warn);border-radius:50%;flex:none;background:linear-gradient(90deg,var(--warn) 50%,transparent 50%)}
+.result-dot.full{border-color:var(--good);background:var(--good)}
+.screen-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.new-cards{padding:14px;background:var(--brass-soft);border-radius:10px;margin-bottom:16px;color:var(--brass);font-size:13px}
+.new-cards p{margin:5px 0 0}
+.book-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.book-card{display:flex;flex-direction:column;align-items:stretch;text-align:left;min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 12px;color:var(--ink);box-shadow:0 2px 0 #d3dfe5}
+.book-card-top{display:flex;align-items:center;justify-content:space-between;gap:5px;color:var(--brass);margin-bottom:12px}
+.book-card-top small{font-size:9px}
+.book-card-symbol{display:flex;color:var(--brass)}
+.book-card h2{font-size:15px;line-height:1.4;letter-spacing:-.4px;margin-bottom:8px;min-height:42px}
+.book-card p{font-size:11px;line-height:1.6;color:var(--ink-2);margin-bottom:12px;flex:1}
+.book-card .book-miniature{width:100%;height:auto;margin:0 0 10px;display:block}
+.book-valve{font-size:10px;color:var(--steel)}
+.book-card.locked{opacity:.63;background:#eaf0f3;box-shadow:none}
+.book-locked-mark{height:58px;text-align:center;font-size:40px;line-height:1;color:#9cadb7;margin-bottom:12px}
+.section-title{font-size:17px;letter-spacing:-.4px;margin:28px 0 12px}
+.scene-list{display:grid;gap:8px}
+#screenContent .scene-button{justify-content:space-between;text-align:left;min-height:54px}
+.scene-button>span{display:flex;align-items:center;gap:8px;font-size:13px}
+.scene-button small{font-size:10px;color:var(--ink-2)}
+.settings-card{padding:17px 15px;background:var(--panel);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;display:flex;flex-direction:column;gap:15px}
+.settings-card h2{font-size:16px;margin:0}
+.setting-field{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;font-size:13px;font-weight:700}
+.setting-field>span{min-width:0}
+.setting-field small{display:block;font-size:10.5px;color:var(--ink-2);font-weight:400;line-height:1.5;margin-top:4px}
+.setting-field input[type=checkbox]{width:22px;height:22px;accent-color:var(--steel);flex:none;margin:4px}
+.setting-field input[type=number]{width:83px;height:40px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;color:var(--ink);background:#f8fbfc}
+.setting-field input[type=range]{accent-color:var(--steel);min-width:0;width:100%;height:30px;margin:0}
+.setting-field select{width:143px;max-width:55%;height:40px;border:1px solid var(--line);border-radius:8px;padding:4px;font:inherit;font-size:11px;color:var(--ink);background:#f8fbfc}
+.range-field{align-items:flex-start;flex-direction:column;gap:6px}
+.range-field>div{width:100%;display:flex;align-items:center;gap:12px}
+.range-field output{width:40px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:var(--steel)}
+.danger-button{font:inherit;min-height:44px;border:1px solid #dfbcb6;background:#fff7f5;border-radius:9px;padding:8px;color:var(--bad);font-size:13px;font-weight:700}
+.storage-warning{margin:0;padding:10px;border-radius:8px;background:#fff2d8;color:var(--warn);font-size:12px}
+.free-intro{display:flex;align-items:center;gap:13px;background:var(--steel-soft);border-radius:12px;padding:14px;margin-bottom:14px;color:var(--steel)}
+.free-intro>svg{width:32px;height:32px;flex:none}
+.free-intro p{font-size:12px;line-height:1.7;margin:0}
+.free-tempo{padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:22px}
+.free-range{display:flex;align-items:center;gap:10px;width:55%}
+.free-range output{font-size:12px;width:48px;flex:none;font-variant-numeric:tabular-nums;color:var(--steel);text-align:right}
+.free-day-list section{margin-bottom:22px}
+.free-day-list h2{font-size:15px;margin-bottom:9px;color:var(--steel)}
+.free-melodies{display:grid;gap:6px}
+.free-melody{width:100%;min-height:51px;background:var(--panel);border:1px solid var(--line);border-radius:9px;display:flex;align-items:center;gap:10px;padding:9px 10px;text-align:left;font-size:12px}
+.free-melody strong{font-size:11px;color:var(--ink-2);width:16px;font-variant-numeric:tabular-nums}
+.free-melody>span{flex:1}
+.free-melody small{font-size:10px;color:var(--ink-2)}
+@media(max-width:359px){#screenContent{padding:16px 12px 22px}.title-screen h1{font-size:42px}.screen-header{gap:10px}.screen-header h1{font-size:21px}.day-tile{gap:9px;padding:13px 10px}.day-copy strong{font-size:15px}.book-card{padding:11px 9px}.book-card h2{font-size:14px}.scene-button small{display:none}}
+@media(max-height:620px){.title-screen .brand-art{max-height:150px}.title-screen h1{font-size:39px}.title-kicker{margin-bottom:8px}.title-description{font-size:12px}.title-subactions{margin-top:13px}.title-footnote{margin-top:18px!important}.title-screen{padding:0}}
+@media(prefers-reduced-motion:reduce){.day-tile{transition:none}}
+
+.scene-switch{display:flex;gap:8px}.scene-switch button{min-height:44px;flex:1}.error-box{position:fixed;bottom:0;z-index:99;background:#fff;color:var(--bad);padding:16px;border:2px solid var(--bad)}
+.panel>button{min-height:48px;border:1px solid var(--steel);border-radius:10px;background:var(--steel-soft);font-size:15px;font-weight:700;padding:12px}
+.tutorial{outline:3px solid var(--brass);outline-offset:2px}
+.hud.nosound .hud-center h1{display:none}.hud.nosound .chipbtn{font-size:12px;padding:0 7px}
+@media(max-width:420px){.hud.nosound .hud-center{align-items:center}}
+@media(min-width:800px){#app{padding-top:8px;padding-bottom:8px}}
+html[data-large-text] #app{grid-template-rows:44px 68px minmax(271px,1fr) 60px 104px}
+html[data-large-text] body{overflow:auto}html[data-large-text] #app{min-height:620px}
+</style></head><body><svg class="svg-sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8M5 10v11h5v-7h4v7h5V10"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><path d="m9 3-1 3-3 1-2 4 2 2v3l4 3 3-1 3 1 4-3v-3l2-2-2-4-3-1-1-3Z"/><circle cx="12" cy="11" r="3"/></symbol>
+<symbol id="i-fullscreen" viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m8 0h5v-5"/></symbol>
+<symbol id="i-water" viewBox="0 0 24 24"><path d="M12 2c-2 5-7 8-7 13a7 7 0 0 0 14 0c0-5-5-8-7-13Z"/><path d="M8 15c0 2 1 3 3 3"/></symbol>
+<symbol id="i-sound" viewBox="0 0 24 24"><path d="m4 9 5 0 5-5v16l-5-5H4ZM18 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M12 5v15M3 3c4 0 6 0 9 2 3-2 5-2 9-2v15c-4 0-6 0-9 2-3-2-5-2-9-2Z"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="m11 5-7 7 7 7m-7-7h17"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5L20 6"/></symbol>
+</defs></svg>
+<main id="screen"><div id="screenContent"></div></main>
+<main id="app" hidden>
+  <header class="hud" id="hud">
+    <button type="button" class="iconbtn" id="home" aria-label="작업일 지도로"><svg><use href="#i-home"/></svg></button>
+    <button id="soundChip" class="chipbtn" type="button">소리 켜기</button><div class="hud-center"><h1 id="dayName">음표 파이프 공방</h1><div class="dots" id="dots" role="img" aria-label="의뢰 진행"></div></div>
+    <button type="button" class="iconbtn" id="openSettings" aria-label="설정"><svg><use href="#i-settings"/></svg></button>
+    <button type="button" class="iconbtn" id="fullscreen" aria-label="전체 화면 (0)"><svg><use href="#i-fullscreen"/></svg></button>
+  </header>
+  <section class="card brief" id="brief" aria-label="의뢰"><span class="tag" id="askTag"></span><p id="briefText"></p><button type="button" class="second" id="hear" hidden>의뢰 듣기</button></section>
+  <section class="card stage" id="stage" aria-label="설계도와 물길"><svg id="score" role="img"></svg><div class="pipes" id="pipesWrap"><svg id="pipes" role="img"></svg><div id="joints"></div><div class="veil" id="veil" hidden>물길은 답한 뒤에 보여요</div></div></section>
+  <p class="readout" id="readout" role="status"><span id="readoutText"></span></p>
+  <div class="controls" id="controls">
+    <div class="grp" id="g-count" hidden><div class="row" id="choices" role="radiogroup" aria-label="보기"></div><div class="row"><button type="button" class="second" id="countTrial" hidden>물 틀기</button><button type="button" class="primary" id="confirm">확정</button></div></div>
+    <div class="grp" id="g-pipe" hidden><div class="row" id="tools" role="radiogroup" aria-label="도구"><button type="button" class="opt" role="radio" id="tool-gap" data-tool="gap">떼기</button><button type="button" class="opt" role="radio" id="tool-slur" data-tool="slur">잇기</button><button type="button" class="opt" role="radio" id="tool-tie" data-tool="tie">붙이기</button></div><div class="row"><button type="button" class="second" id="trial">물 틀기</button><button type="button" class="primary" id="inspect">검수</button></div></div>
+    <div class="grp" id="g-valve" hidden><button type="button" id="pad">밸브</button><div class="side"><button type="button" class="second" id="machine">기계 밸브</button><button type="button" class="second" id="deliverBtn">납품</button></div></div>
+    <div class="grp" id="g-deliver" hidden><div class="rec" id="rec"></div><div class="row"><button type="button" class="second" id="again">다시 듣기</button><button type="button" class="primary" id="next">다음 의뢰</button></div></div>
+    <div class="grp" id="g-scene" hidden><div class="row"><button type="button" class="opt" id="sceneA">가</button><button type="button" class="opt" id="sceneB">나</button></div><div class="row"><button type="button" class="second" id="sceneTrial">물 틀기</button><button type="button" class="primary" id="sceneNext">알겠어요</button></div></div>
+    <div class="grp" id="g-free" hidden><div class="row" id="freeTools"><button type="button" class="opt" data-tool="gap">떼기</button><button type="button" class="opt" data-tool="slur">잇기</button><button type="button" class="opt" data-tool="tie">붙이기</button></div><div class="row"><button type="button" class="second" id="freeTrial">물 틀기</button><button type="button" class="primary" id="freeValve">밸브 연습</button></div></div>
+  </div>
+</main>
+<div class="sheet" id="overlay" hidden><div class="panel" id="overlayContent" role="dialog" aria-modal="true" tabindex="-1"></div></div>
+<div id="toast" role="status" hidden></div>
+<script>// Reference implementation: appendix C.1–C.3, design v1.0 (2026-11-14).
+
+// ═══ 음표 파이프 공방 · 이론 엔진 초안 ═══
+// 길이는 전부 분수다. 소수로 바꾸는 곳은 화면 좌표와 소리 시각뿐이다.
+// 음표 길이 표도, "이 곡선은 붙임줄" 같은 이름표도 두지 않는다. 곡선의 이름은 양 끝 음에서 읽는다.
+
+// ── 분수 ──
+const gcd = (a, b) => (b ? gcd(b, a % b) : Math.abs(a));
+const F = (n, d = 1) => { if (d < 0) { n = -n; d = -d; } const g = gcd(n, d) || 1; return { n: n / g, d: d / g }; };
+const add = (a, b) => F(a.n * b.d + b.n * a.d, a.d * b.d);
+const sub = (a, b) => F(a.n * b.d - b.n * a.d, a.d * b.d);
+const mul = (a, b) => F(a.n * b.n, a.d * b.d);
+const div = (a, b) => F(a.n * b.d, a.d * b.n);
+const eq = (a, b) => a.n === b.n && a.d === b.d;
+const lt = (a, b) => a.n * b.d < b.n * a.d;
+const minF = (a, b) => (lt(a, b) ? a : b);
+const num = (a) => a.n / a.d;
+const str = (a) => (a.d === 1 ? String(a.n) : a.n + "/" + a.d);
+const isPow2 = (x) => Number.isInteger(x) && x > 0 && (x & (x - 1)) === 0;
+
+// ── 음표 길이와 음높이 ──
+const noteWhole = (den, dots = 0) => F(2 ** (dots + 1) - 1, den * 2 ** dots);        // 온음표 = 1
+const toBeats = (whole, beatDen = 4) => mul(whole, F(beatDen));                      // 박자표의 아래 숫자가 한 박
+const MAJOR = [2, 2, 1, 2, 2, 2, 1];                                                 // 장음계 공식: 온 온 반 온 온 온 반
+const semis = (letter) => MAJOR.slice(0, letter).reduce((s, x) => s + x, 0);
+const midiOf = (p) => 12 * (p.oct + 1) + semis(p.letter);
+const hz = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+const stepOf = (p) => p.letter + 7 * (p.oct - 4);                                    // 가온 도 = 0. 오선의 줄과 칸을 하나씩 센다
+const samePitch = (a, b) => a.letter === b.letter && a.oct === b.oct;
+
+// ── 의뢰: 씨앗만 적는다. 음표 "C4/4 C4/4 D4/4 E4/4"(음이름·옥타브/음표 분모, 점은 뒤에 .), 이음매 "tss"(t 붙임, s 이음, g 뗌) ──
+const LETTERS = "CDEFGAB";
+const JOINT = { g: "gap", s: "slur", t: "tie" };
+function parseNotes(text) {
+  return text.trim().split(/\s+/).filter((tok) => tok !== "|").map((tok) => {
+    const m = /^([A-G])(\d)\/(\d+)(\.*)$/.exec(tok);
+    if (!m) throw new Error("음표 씨앗을 읽을 수 없다: " + tok);
+    return { p: { letter: LETTERS.indexOf(m[1]), oct: +m[2] }, den: +m[3], dots: m[4].length };
+  });
+}
+const parseJoints = (text, n) => Array.from({ length: n - 1 }, (_, k) => JOINT[(text || "")[k]] || "gap");
+function makeJob(seed) {
+  const meter = seed.meter.split("/").map(Number), notes = parseNotes(seed.notes);
+  return { id: seed.id || "", meter, notes, joints: parseJoints(seed.joints, notes.length), bpm: seed.bpm || 60 };
+}
+
+// ── 시간 ──
+const durOf = (job, i) => toBeats(noteWhole(job.notes[i].den, job.notes[i].dots), job.meter[1]);
+function starts(job) { const out = []; let t = F(0); job.notes.forEach((_, i) => { out.push(t); t = add(t, durOf(job, i)); }); return out; }
+const totalBeats = (job) => job.notes.reduce((t, _, i) => add(t, durOf(job, i)), F(0));
+const barBeats = (job) => F(job.meter[0]);
+const floorF = (a) => Math.floor(a.n / a.d);
+function fitsBars(job) {                                                             // 음표 하나는 마디 하나 안에 있고, 마지막 마디가 꽉 찬다
+  const bar = barBeats(job), st = starts(job), total = totalBeats(job);
+  const inside = job.notes.every((_, i) => !lt(mul(F(floorF(div(st[i], bar)) + 1), bar), add(st[i], durOf(job, i))));
+  return inside && div(total, bar).d === 1;
+}
+const onBar = (job, k) => div(starts(job)[k + 1], barBeats(job)).d === 1;            // 이음매 k가 마디선 위에 있는가
+
+// ── 이음매: 뗌(gap) · 이음(slur) · 붙임(tie) ──
+const canTie = (job, k) => samePitch(job.notes[k].p, job.notes[k + 1].p);
+function withJoint(job, k, state) {                                                  // 붙임은 같은 높이에서만 된다
+  if (state === "tie" && !canTie(job, k)) return { ok: false, why: "pitch", job };
+  const joints = job.joints.slice(); joints[k] = state;
+  return { ok: true, job: Object.assign({}, job, { joints }) };
+}
+const validJoints = (job) => job.joints.every((jt, k) => jt !== "tie" || canTie(job, k));
+const gapBeats = (dur) => minF(F(1, 4), div(dur, F(2)));                             // 뗌: 소리 끝에서 1/4박을 비운다. 짧은 소리는 절반까지만
+
+// 소리 목록: 붙임으로 이어진 음표들을 소리 하나로 합친다
+function sounds(job) {
+  const st = starts(job), out = [];
+  for (let i = 0; i < job.notes.length;) {
+    let j = i, dur = durOf(job, i);
+    while (j < job.joints.length && job.joints[j] === "tie") { j++; dur = add(dur, durOf(job, j)); }
+    const before = i === 0 ? null : job.joints[i - 1], after = j < job.joints.length ? job.joints[j] : null;
+    const gap = after === "gap" ? gapBeats(dur) : F(0);
+    out.push({ p: job.notes[i].p, from: i, to: j, start: st[i], dur, gap, len: sub(dur, gap), attack: before === "slur" ? "legato" : "fresh", after });
+    i = j + 1;
+  }
+  return out;
+}
+const bells = (job) => sounds(job).length;                                           // 방울 = 소리 시작
+function streams(job) {                                                              // 물줄기: 뗌으로 나뉜 구간 [첫 음, 끝 음]
+  const out = []; let a = 0;
+  job.joints.forEach((jt, k) => { if (jt === "gap") { out.push([a, k]); a = k + 1; } });
+  out.push([a, job.notes.length - 1]);
+  return out;
+}
+
+// ── 악보의 곡선 ──
+function toCurves(job) {                                                             // 이음매 → 곡선. 이음줄은 물줄기의 첫 음에서 끝 음까지
+  const ties = [], slurs = [];
+  job.joints.forEach((jt, k) => { if (jt === "tie") ties.push([k, k + 1]); });
+  streams(job).forEach(([a, b]) => { if (job.joints.slice(a, b).includes("slur")) slurs.push([a, b]); });
+  return { ties, slurs, all: ties.concat(slurs) };
+}
+function readCurves(notes, curves) {                                                 // 곡선 → 이음매. 같은 높이의 이웃한 두 음만 이으면 붙임줄, 그 밖에는 이음줄
+  const joints = Array(notes.length - 1).fill("gap");
+  const isTie = ([i, j]) => j === i + 1 && samePitch(notes[i].p, notes[j].p);
+  curves.filter(isTie).forEach(([i]) => { joints[i] = "tie"; });
+  curves.filter((c) => !isTie(c)).forEach(([i, j]) => { for (let k = i; k < j; k++) if (joints[k] !== "tie") joints[k] = "slur"; });
+  return joints;
+}
+const ambiguous = (job) => toCurves(job).slurs.filter(([a, b]) => b === a + 1 && samePitch(job.notes[a].p, job.notes[b].p));   // 붙임줄로 읽히고 마는 이음줄
+
+// ── 붙임줄은 왜 필요한가 ──
+function singleNote(beats, beatDen = 4, maxDots = 1) {                               // 이 길이를 음표 하나로 적을 수 있으면 그 음표
+  const whole = div(beats, F(beatDen));
+  for (let dots = 0; dots <= maxDots; dots++) {
+    const den = div(F(2 ** (dots + 1) - 1, 2 ** dots), whole);
+    if (den.d === 1 && isPow2(den.n)) return { den: den.n, dots };
+  }
+  return null;
+}
+function whyTie(job, k) {                                                            // bar 마디선을 넘는다 · need 음표 하나로 적을 수 없다 · choice 음표 하나로도 적을 수 있다
+  if (job.joints[k] !== "tie") return null;
+  if (onBar(job, k)) return "bar";
+  const s = sounds(job).find((x) => x.from <= k && k < x.to);
+  return singleNote(s.dur, job.meter[1]) ? "choice" : "need";
+}
+
+// ── 소리 예약표(초). 첫 음의 시작이 0 ──
+const beatsToSec = (beats, bpm) => (num(beats) * 60) / bpm;
+function schedule(job, bpm = job.bpm) {
+  const list = sounds(job);
+  return list.map((s, i) => ({ t: beatsToSec(s.start, bpm), len: beatsToSec(s.len, bpm), midi: midiOf(s.p), attack: s.attack,
+    release: s.after !== "slur" ? "cut" : samePitch(s.p, list[i + 1].p) ? "dip" : "over" }));
+}
+
+// ── 검수: 내 이음매를 정답과 견준다 ──
+function inspect(job, truth) {
+  const out = [];
+  truth.forEach((want, k) => {
+    const got = job.joints[k];
+    if (got === want) return;
+    const why = want === "tie" ? "tie-missed" : got === "tie" ? (want === "slur" ? "tie-in-slur" : "tie-no-curve") : want === "slur" ? "slur-broken" : "slur-extra";
+    out.push({ k, want, got, why });
+  });
+  return out;
+}
+
+// ── 밸브(손) 판정: 누른 구간 [누름, 뗌](박)만 받는 순수 함수 ──
+// 누른 채로 지나가야 하는 이음매: 붙임, 높이가 다른 이음. 뗐다 눌러야 하는 이음매: 뗌, 높이가 같은 이음
+const expectHeld = (job, k) => job.joints[k] === "tie" || (job.joints[k] === "slur" && !canTie(job, k));
+function pressPlan(job) {                                                            // 설계도대로 누를 구간
+  const st = starts(job), total = totalBeats(job), out = [];
+  let a = F(0);
+  job.joints.forEach((jt, k) => {
+    if (expectHeld(job, k)) return;
+    const s = sounds(job).find((x) => x.from <= k && k <= x.to);
+    out.push([a, sub(st[k + 1], jt === "gap" ? s.gap : F(1, 16))]);
+    a = st[k + 1];
+  });
+  out.push([a, total]);
+  return out;
+}
+function judgeHold(holds, job, eps = 1 / 16, win = 1 / 4) {
+  const st = starts(job).map(num);
+  const heldThrough = (t) => holds.some(([a, b]) => a <= t - eps && t + eps <= b);
+  const pressNear = (t) => holds.some(([a]) => Math.abs(a - t) <= win);
+  const first = holds.some(([a, b]) => a <= win && b >= eps);                          // 첫 음이 시작할 때 누르고 있었는가(준비 박에서 미리 눌러도 된다)
+  const joints = job.joints.map((want, k) => {
+    const held = expectHeld(job, k), t = st[k + 1];
+    return { k, want, expectHeld: held, ok: held ? heldThrough(t) : pressNear(t) && !heldThrough(t) };
+  });
+  const planned = 1 + joints.filter((j) => !j.expectHeld).length;                      // 설계도대로면 누르는 횟수
+  const extra = holds.filter(([a], i) => i > 0 && !st.some((t) => Math.abs(a - t) <= win)).length;   // 음표 한가운데에서 새로 누른 횟수(이음매 근처의 누름은 이음매 쪽에서, 첫 누름은 first에서 센다)
+  const errors = joints.filter((j) => !j.ok).length + extra + (first ? 0 : 1);
+  return { joints, first, extra, presses: holds.length, planned, errors, grade: errors === 0 ? "smooth" : errors === 1 ? "drip" : "leak" };
+}
+
+// ── 우리말 ──
+const SOLFA = ["도", "레", "미", "파", "솔", "라", "시"];                              // 계이름 글자. 이론 표가 아니다
+const GLYPH = { "1/2": "½", "1/4": "¼", "3/4": "¾" };                                // 분수 글자
+const wa = (word) => word + ((word.charCodeAt(word.length - 1) - 0xac00) % 28 ? "과" : "와");   // 받침에 따라 와/과
+const solfa = (p) => (p.oct > 4 ? "높은 " : p.oct < 4 ? "낮은 " : "") + SOLFA[p.letter];
+const noteKo = (den, dots = 0) => "점".repeat(dots) + (den === 1 ? "온음표" : den + "분음표");
+function beatsKo(f) {
+  const whole = floorF(f), rest = F(f.n - whole * f.d, f.d);
+  if (rest.n === 0) return whole + "박";
+  return (GLYPH[str(rest)] ? (whole || "") + GLYPH[str(rest)] : str(f)) + "박";
+}
+const JOINT_KO = { gap: "뗌", slur: "이음", tie: "붙임" };
+const soundLine = (job) => sounds(job).map((s, i, all) => solfa(s.p) + " " + beatsKo(s.dur) + (i < all.length - 1 ? (s.after === "slur" ? " → " : " · ") : "")).join("");
+
+// ═══ 제품용 확장(의뢰 스파이크부터) ═══
+// ── 셈 의뢰: 보기와 답은 글자열 열쇠("3", "5/2")로 견준다 ──
+const fromStr = (s) => { const [n, d] = String(s).split("/").map(Number); return F(n, d || 1); };
+const longest = (job) => sounds(job).reduce((a, s) => (lt(a.dur, s.dur) ? s : a));          // 가장 긴 소리(같으면 앞의 것)
+const countAnswer = (job, q) => (q === "bells" ? String(bells(job)) : str(longest(job).dur));
+function countChoices(job, q) {                                                      // 방울: 1~음표 수. 길이: 정답, 이음줄 안을 다 더한 값, 음표 하나하나, 전체에서 넷까지
+  if (q === "bells") return Array.from({ length: job.notes.length }, (_, i) => String(i + 1));
+  const cand = [];
+  const push = (f) => { if (!cand.some((c) => eq(c, f))) cand.push(f); };
+  push(longest(job).dur);
+  toCurves(job).slurs.forEach(([a, b]) => { let t = F(0); for (let i = a; i <= b; i++) t = add(t, durOf(job, i)); push(t); });
+  job.notes.forEach((_, i) => push(durOf(job, i)));
+  push(totalBeats(job));
+  return cand.slice(0, 4).sort((x, y) => num(x) - num(y)).map(str);
+}
+function countCause(job, q, picked) {                                                // 틀린 셈의 원인
+  const C = toCurves(job);
+  if (q === "bells") {
+    if (!C.all.length) return "no-curve";                                            // 곡선이 없으면 음표마다 방울
+    if (+picked > bells(job)) return "tie-counted";                                  // 붙임줄 뒤의 음도 셌다
+    return C.slurs.length ? "slur-merged" : "tie-over";                              // 이음줄을 한 음으로 셌다 · 붙임줄 밖의 음까지 합쳤다
+  }
+  const top = longest(job);
+  if (lt(fromStr(picked), top.dur)) return top.to > top.from ? "not-summed" : "note-length";   // 붙인 길이를 더하지 않았다 · 음표 길이를 잘못 읽었다
+  return C.slurs.length ? "slur-summed" : "over-summed";                             // 이음줄 안을 더했다 · 곡선 없는 음까지 더했다
+}
+const countLabel = (q, key) => (q === "bells" ? key + "번" : beatsKo(fromStr(key)));
+
+// ── 검수에서 먼저 말할 원인: 초안의 순서(같은 음과 소리 시작 → 선율의 연결), 같으면 앞의 이음매 ──
+const CAUSE_ORDER = ["tie-missed", "tie-in-slur", "tie-no-curve", "slur-broken", "slur-extra"];
+const firstCause = (list) => list.slice().sort((a, b) => CAUSE_ORDER.indexOf(a.why) - CAUSE_ORDER.indexOf(b.why) || a.k - b.k)[0] || null;
+
+// ── 말 의뢰의 문장 틀 ──
+function wordKind(job) {
+  const n = job.notes.length, j = job.joints;
+  if (n === 2 && j[0] === "tie") return "tie-pair";                                  // "두 도를 한 번만 소리 나게 붙여 주세요."
+  if (j.length && j.every((x) => x === "slur")) return "slur-all";                   // "도 레 미를 틈 없이 이어 주세요."
+  if (j.includes("tie") && j.includes("gap") && j.every((x, k) => (canTie(job, k) ? x === "tie" : x === "gap"))) return "tie-all";   // "붙일 수 있는 곳을 모두 붙여 주세요."
+  return null;
+}
+
+// ── 도면 카드: 이 의뢰가 다루는 연결의 종류 ──
+function tagsOf(job) {
+  const t = [], add1 = (x) => { if (!t.includes(x)) t.push(x); }, C = toCurves(job);
+  if (!C.all.length) add1("plain");
+  job.joints.forEach((jt, k) => {
+    if (jt === "tie") {
+      const w = whyTie(job, k), s = sounds(job).find((x) => x.from <= k && k < x.to), one = singleNote(s.dur, job.meter[1]);
+      add1(w === "bar" ? "tie-bar" : w === "need" ? "tie-need" : one && one.dots ? "tie-dot" : "tie");
+    }
+    if (jt === "slur") add1(canTie(job, k) ? "slur-same" : "slur");
+  });
+  C.slurs.forEach(([a, b]) => { if (job.joints.slice(a, b).includes("tie")) add1("tie-in-slur"); });
+  return t;
+}
+const eul = (word) => word + ((word.charCodeAt(word.length - 1) - 0xac00) % 28 ? "을" : "를");   // 받침에 따라 을/를
+
+const ASK_KO = { word: "말", score: "설계도", sound: "소리", repair: "수리", count: "셈" };
+const TOOL_CODE = { gap: "g", slur: "s", tie: "t" };
+const RANK = { "매끈": 3, "한 곳 샘": 2, "여러 곳 샘": 1, "기계": 0.5 };
+
+function briefText(seed, job) {
+  if (seed.ask === "count") return (seed.reveal === "before" ? "물을 틀어 보세요. " : "악보만 보고 맞혀요. ") + (seed.q === "bells" ? "방울은 몇 번 울릴까요?" : "가장 긴 소리는 몇 박일까요?");
+  if (seed.ask === "word") {
+    const kind = wordKind(job), names = job.notes.map((nt) => solfa(nt.p));
+    return kind === "tie-pair" ? `두 ${eul(names[0])} 한 번만 소리 나게 붙여 주세요.` : kind === "slur-all" ? `${names.slice(0, -1).join(" ")} ${eul(names[names.length - 1])} 틈 없이 이어 주세요.` : "붙일 수 있는 곳을 모두 붙여 주세요.";
+  }
+  if (seed.ask === "score") return "악보대로 물길을 놓아 주세요.";
+  if (seed.ask === "sound") return "소리를 듣고 물길을 놓아 주세요.";
+  const n = inspect(Object.assign({}, job, { joints: parseJoints(seed.given, job.notes.length) }), job.joints).length;
+  return seed.final ? "물길이 악보와 달라요. 틀린 곳을 찾아 고쳐 주세요." : `물길이 악보와 달라요. ${n}곳을 고쳐 주세요.`;
+}
+function causeText(w, seed, job) {                                                   // 검수의 원인 문구. 소리·말 의뢰에는 곡선이 안 보이므로 말을 달리한다
+  const n = w.k + 1 + "번: ";
+  if (seed.ask === "sound") return n + (w.want === "tie" ? "뒤의 음이 다시 시작하지 않았어요. 한 소리로 붙어 있어요." : w.want === "slur" && w.got === "tie" ? "뒤의 음이 다시 시작했어요. 붙은 소리가 아니에요." : w.want === "slur" ? "틈이 들리지 않았어요. 이어서 소리 나요." : "소리 사이에 틈이 있었어요. 떼어 주세요.");
+  if (seed.ask === "word") return n + (w.want === "tie" ? "같은 높이예요. 붙이기를 고르고 눌러요." : w.want === "slur" ? "틈이 남아 있어요. 잇기를 고르고 눌러요." : "여기는 그대로 떼어 둬요.");
+  return n + { "tie-missed": "같은 높이의 이웃한 두 음만 잇는 곡선은 붙임줄이에요. 뒤의 음은 다시 내지 않아요.", "tie-in-slur": `두 ${solfa(job.notes[w.k].p)}만 잇는 곡선이 없어요. 이음줄 안에서는 다시 소리 내요.`, "tie-no-curve": "여기는 곡선이 없어요. 같은 음이라도 따로 소리 내요.", "slur-broken": "이음줄 안이에요. 틈 없이 이어요.", "slur-extra": "곡선이 여기까지 오지 않아요. 살짝 떼요." }[w.why];
+}
+function countText(job, q, picked) {                                                 // 틀린 셈의 원인 문구
+  const why = countCause(job, q, picked), top = longest(job);
+  if (why === "no-curve") return "곡선이 없으면 음표마다 방울이 울려요. 같은 음도 따로 세요.";
+  if (why === "tie-counted") return "붙임줄로 이어진 음은 다시 시작하지 않아요. 방울이 줄어요.";
+  if (why === "slur-merged") return "이음줄은 음을 합치지 않아요. 음마다 새로 시작해요.";
+  if (why === "tie-over") return "붙임줄은 곡선이 잇는 두 음만 합쳐요. 나머지는 따로 세요.";
+  if (why === "not-summed") { const parts = []; for (let i = top.from; i <= top.to; i++) parts.push(beatsKo(durOf(job, i))); return `붙인 소리는 더한 길이예요. ${parts.join(" + ")} = ${beatsKo(top.dur)}.`; }
+  if (why === "note-length") return `${noteKo(job.notes[top.from].den, job.notes[top.from].dots)}는 ${beatsKo(top.dur)}이에요. 관의 길이를 보세요.`;
+  if (why === "slur-summed") return "이음줄은 길이를 합치지 않아요. 음마다 제 길이만큼 울려요.";
+  return "곡선이 잇지 않은 음은 더하지 않아요.";
+}
+function valveText(j) {
+  if (j.grade === "smooth") return { tone: "good", text: `매끈해요. ${j.presses}번 눌렀어요(설계도 ${j.planned}번).` };
+  const bad = j.joints.find((x) => !x.ok), n = bad ? bad.k + 1 : 0;
+  const why = !j.first ? "첫 음이 시작할 때 눌러요."
+    : !bad ? "음표 한가운데에서는 새로 누르지 않아요."
+    : bad.want === "tie" ? `${n}번은 붙임이에요. 떼지 않고 계속 눌러요.`
+    : bad.want === "slur" && bad.expectHeld ? `${n}번은 이음이에요. 누른 채로 지나가요.`
+    : bad.want === "slur" ? `${n}번은 같은 음을 잇는 자리예요. 짧게 뗐다 바로 눌러요.`
+    : `${n}번은 뗌이에요. 뗐다가 다시 눌러요.`;
+  return { tone: j.grade === "drip" ? "warn" : "bad", text: `${j.grade === "drip" ? "한 곳에서 샜어요." : "여러 곳에서 샜어요."} ${why}` };
+}
+
+// ── Pure verification suite (TH, IN, CN, JD 01–06, GN) ──
+// Does not mutate jobs or play audio. Pair cases are exhaustive, not snapshots.
+function runEngineTests(days) {
+  const out = [], equal = (a,b) => JSON.stringify(a) === JSON.stringify(b);
+  const assert = (v,m='assertion failed') => {if(!v) throw new Error(m);};
+  const test = (id,fn) => {try {const detail=fn();out.push({id,pass:true,detail:detail||''});}catch(e){out.push({id,pass:false,error:e.message});}};
+  const jobs = days.flatMap(day => day.jobs.map(seed => ({seed,day,job:makeJob(seed)})));
+  const byId = id => jobs.find(x=>x.seed.id===id).job;
+  const product = (n, chars) => n ? product(n-1,chars).flatMap(s=>chars.map(c=>s+c)) : [''];
+  const all = [];
+  for(let n=2;n<=5;n++) {
+    for(const pitches of product(n,['C','D','E'])) {
+      const base=makeJob({meter:n+'/4',notes:pitches.split('').map(p=>p+'4/4').join(' ')});
+      for(const jts of product(n-1,['g','s','t'])) {
+        const job=Object.assign({},base,{joints:parseJoints(jts,n)});
+        if(validJoints(job)) all.push(job);
+      }
+    }
+  }
+  test('TH-01',()=>{assert(all.length===8400);for(const job of all) assert(eq(sounds(job).reduce((a,s)=>add(a,s.dur),F(0)),totalBeats(job)));return '8,400 valid arrangements';});
+  test('TH-02',()=>{for(const job of all){const list=sounds(job);assert(list.length===job.notes.length-job.joints.filter(j=>j==='tie').length);assert(new Set(list.map(s=>str(s.start))).size===list.length);}});
+  test('TH-03',()=>{for(const job of all)assert(streams(job).length===job.joints.filter(j=>j==='gap').length+1);});
+  test('TH-04',()=>{for(const job of all)for(const s of sounds(job)){assert(eq(add(s.len,s.gap),s.dur));assert(!lt(div(s.dur,F(2)),s.gap));assert((s.gap.n>0)===(s.after==='gap'));}});
+  test('TH-05',()=>{for(const job of all){const c=toCurves(job);assert(c.ties.length===job.joints.filter(j=>j==='tie').length);assert(equal(c.slurs,streams(job).filter(([a,b])=>job.joints.slice(a,b).includes('slur'))));}});
+  test('TH-06',()=>{let round=0,amb=0;for(const job of all){const ok=equal(readCurves(job.notes,toCurves(job).all),job.joints);assert(ok===(ambiguous(job).length===0));ok?round++:amb++;}assert(round===7056&&amb===1344);return '7,056 round trips; 1,344 explicitly ambiguous';});
+  test('TH-07',()=>{let rejected=0;for(const job of all)for(let k=0;k<job.joints.length;k++)if(!canTie(job,k)){const before=JSON.stringify(job);const r=withJoint(job,k,'tie');assert(!r.ok&&r.job===job&&JSON.stringify(job)===before);rejected++;}/* Design prose says 13,740. The specified 8,400-case universe yields 18,408; verified rejection is a strict superset. */assert(rejected===18408);return '18,408 rejected ties (design prose: 13,740; documented arithmetic discrepancy)';});
+  test('TH-08',()=>{for(const job of all){const st=starts(job);for(const s of sounds(job)){assert(eq(s.start,st[s.from]));assert(s.attack===(s.from>0&&job.joints[s.from-1]==='slur'?'legato':'fresh'));for(let k=s.from;k<s.to;k++)assert(canTie(job,k));}}});
+  test('TH-09',()=>{const cases=[
+    ['4/4','C4/4 C4/4 D4/4 E4/4','ggg',4,'도 1박 · 도 1박 · 레 1박 · 미 1박',0,0],
+    ['2/4','C4/4 C4/4','t',1,'도 2박',1,0],
+    ['3/4','C4/2 C4/4','t',1,'도 3박',1,0],
+    ['3/4','C4/2 C4/8 E4/8','tg',2,'도 2½박 · 미 ½박',1,0],
+    ['3/4','C4/4 D4/4 E4/4','ss',3,'도 1박 → 레 1박 → 미 1박',0,1],
+    ['4/4','E4/4 E4/4 G4/2','ss',3,'미 1박 → 미 1박 → 솔 2박',0,1],
+    ['4/4','E4/4 E4/4 G4/2','ts',2,'미 2박 → 솔 2박',1,1],
+    ['4/4','C4/4 C4/4 D4/4 E4/4','tss',3,'도 2박 → 레 1박 → 미 1박',1,1],
+    ['4/4','C4/4 C4/4 D4/4 E4/4','sss',4,'도 1박 → 도 1박 → 레 1박 → 미 1박',0,1],
+    ['2/4','C4/4 E4/4 E4/4 C4/4','gtg',3,'도 1박 · 미 2박 · 도 1박',1,0]];
+    for(const [meter,notes,joints,b,line,t,s]of cases){const job=makeJob({meter,notes,joints});const c=toCurves(job);assert(bells(job)===b&&soundLine(job)===line&&c.ties.length===t&&c.slurs.length===s);}return '10 locked appendix B.1 examples';});
+  test('TH-10',()=>{assert(equal(singleNote(F(3)),{den:2,dots:1}));assert(equal(singleNote(F(1)),{den:4,dots:0}));assert(singleNote(F(5,2))===null);});
+  test('TH-11',()=>{assert(whyTie(byId('d2-05'),1)==='bar');assert(whyTie(byId('d2-07'),0)==='need');assert(whyTie(byId('d1-01'),0)==='choice');});
+  test('TH-12',()=>{assert(!fitsBars(makeJob({meter:'3/4',notes:'C4/2 D4/2 E4/2'})));assert(!fitsBars(makeJob({meter:'3/4',notes:'C4/4 D4/4'})));});
+  test('TH-13',()=>{assert(hz(69)===440);assert(hz(60).toFixed(2)==='261.63');assert(midiOf({letter:5,oct:4})===69);});
+  test('TH-14',()=>{assert(eq(sub(F(1),gapBeats(F(1))),F(3,4)));assert(eq(sub(F(1,2),gapBeats(F(1,2))),F(1,4)));});
+  test('TH-15',()=>{assert(beatsToSec(F(1),50)===1.2);for(const{job}of jobs)assert(equal(sounds(job),sounds(Object.assign({},job,{bpm:50}))));});
+  test('TH-16',()=>{const seen=new Map();for(const job of all){const pitch=JSON.stringify(job.notes);if(!seen.has(pitch))seen.set(pitch,new Set());const s=JSON.stringify(schedule(job));assert(!seen.get(pitch).has(s));seen.get(pitch).add(s);}});
+  test('TH-17',()=>{assert(noteWhole.toString().includes('2 ** (dots + 1)'));assert(toCurves.toString().includes('streams(job)'));assert(readCurves.toString().includes('j === i + 1'));return 'Reference formulas; curve labels derived from span and pitch';});
+  test('IN-01',()=>{const got=new Set();for(const{seed,job}of jobs.filter(x=>x.seed.ask==='repair'))for(const w of inspect(Object.assign({},job,{joints:parseJoints(seed.given,job.notes.length)}),job.joints))got.add(w.why);assert(equal([...got].sort(),[...CAUSE_ORDER].sort()));});
+  test('IN-02',()=>{const cases=[{k:0,why:'slur-broken'},{k:1,why:'tie-missed'},{k:2,why:'tie-missed'}];assert(firstCause(cases).k===1);assert(firstCause([])===null);for(const perm of product(3,['0','1','2'])){const arr=perm.split('').map(i=>cases[+i]);const a=firstCause(arr);for(const b of arr)assert(CAUSE_ORDER.indexOf(a.why)<CAUSE_ORDER.indexOf(b.why)||(a.why===b.why&&a.k<=b.k));}});
+  test('IN-03',()=>{const grouped=new Map();for(const job of all){const key=JSON.stringify(job.notes);if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(job);}let pairs=0;for(const list of grouped.values())for(const a of list)for(const b of list){const errors=inspect(a,b.joints);assert(errors.length===a.joints.filter((j,k)=>j!==b.joints[k]).length);if(a!==b)pairs++;}assert(pairs===257820);return '257,820 distinct arrangement pairs';});
+  test('CN-01',()=>{assert(countAnswer(byId('d5-02'),'bells')==='2');assert(countAnswer(byId('d2-07'),'longest')==='5/2');assert(longest(byId('d4-06')).from===0);});
+  test('CN-02',()=>{for(const{seed,job}of jobs.filter(x=>x.seed.ask==='count')){const c=countChoices(job,seed.q);assert(c.length>=2&&c.length<=5);assert(c.filter(x=>x===countAnswer(job,seed.q)).length===1);assert(c.every((v,k)=>!k||num(fromStr(c[k-1]))<num(fromStr(v))));}});
+  test('CN-03',()=>{const cases=[['d0-04','bells','1','no-curve'],['d1-02','bells','2','tie-counted'],['d3-06','bells','1','slur-merged'],['d1-03','bells','1','tie-over'],['d2-03','longest','1','not-summed'],['d0-03','longest','1','note-length'],['d5-05','longest','4','slur-summed'],['d0-03','longest','4','over-summed']];for(const[id,q,p,w]of cases)assert(countCause(byId(id),q,p)===w);});
+  test('CN-04',()=>assert(countText(byId('d2-03'),'longest','1')==='붙인 소리는 더한 길이예요. 1박 + 2박 = 3박.'));
+  test('JD-01',()=>{for(const job of all.concat(jobs.map(x=>x.job)))assert(judgeHold(pressPlan(job).map(h=>h.map(num)),job).grade==='smooth');return 'All 8,400 arrangements and 49 jobs';});
+  test('JD-02',()=>{const job=byId('d5-01');assert(judgeHold([[0,.9],[1.03,4]],job).grade==='drip');assert(judgeHold([[0,1.9],[2.05,2.9],[3.05,4]],job).grade==='leak');});
+  test('JD-03',()=>{const job=byId('d2-05');assert(judgeHold([[-.1,.8],[1,2.8],[3,4]],job).grade==='smooth');assert(judgeHold([[-.1,4]],job).errors===2);});
+  test('JD-04',()=>{const job=byId('d4-03');assert(judgeHold([[0,4]],job).grade==='drip');assert(judgeHold([[0,15/16],[1,4]],job).grade==='smooth');});
+  test('JD-05',()=>{const job=byId('d5-01');assert(judgeHold([[.6,4]],job).grade==='drip');assert(judgeHold([[-.3,4]],job).grade==='smooth');});
+  test('JD-06',()=>{const r=judgeHold([[-.1,.8],[1,1.4],[1.6,2.8],[3,4]],byId('d2-05'));assert(r.extra===1&&r.grade==='drip');});
+  test('GN-01',()=>{for(const{job}of jobs)assert(fitsBars(job));});
+  test('GN-02',()=>{for(const{job}of jobs)assert(validJoints(job));});
+  test('GN-03',()=>{for(const{job}of jobs)assert(equal(readCurves(job.notes,toCurves(job).all),job.joints));});
+  test('GN-04',()=>{for(const{job}of jobs)assert(job.notes.every(n=>stepOf(n.p)>=0&&stepOf(n.p)<=5));});
+  test('GN-05',()=>{for(const{job}of jobs)assert(job.notes.every(n=>[1,2,4,8].includes(n.den)&&(!n.dots||(n.dots===1&&[2,4].includes(n.den)))));});
+  test('GN-06',()=>{for(const{job}of jobs){const st=starts(job).map(num);const scale=(302-46-8)/num(totalBeats(job));for(let k=1;k<job.joints.length;k++)assert((st[k+1]-st[k])*scale>=40-1e-8);}});
+  test('GN-07',()=>{for(const{job}of jobs)assert(job.notes.length>=2&&job.notes.length<=5&&!lt(F(6),totalBeats(job)));});
+  test('GN-08',()=>{for(const{seed,day,job}of jobs.filter(x=>x.seed.ask==='repair')){const given=Object.assign({},job,{joints:parseJoints(seed.given,job.notes.length)});assert(inspect(given,job.joints).length>0);assert(validJoints(given));assert(equal(readCurves(given.notes,toCurves(given).all),given.joints));assert(given.joints.every(j=>day.tools.includes(TOOL_CODE[j])));}});
+  test('GN-09',()=>{for(const day of days)assert(day.jobs.filter(x=>x.final).length===1&&day.jobs.at(-1).final===true);});
+  test('GN-10',()=>{assert(days.length===7);for(const day of days)assert(day.jobs.length>=6&&day.jobs.length<=8);assert(jobs.length===49);});
+  test('GN-11',()=>{for(const{seed,day,job}of jobs)if(seed.ask!=='count')assert(job.joints.every(j=>day.tools.includes(TOOL_CODE[j])));});
+  test('GN-12',()=>{for(const{seed,job}of jobs.filter(x=>x.seed.ask==='count')){const c=countChoices(job,seed.q);assert(c.length>=2&&c.length<=5&&c.includes(countAnswer(job,seed.q)));}});
+  test('GN-13',()=>{for(const{seed,job}of jobs.filter(x=>x.seed.ask==='word'))assert(wordKind(job)!==null);});
+  test('GN-14',()=>{for(const{seed,job}of jobs.filter(x=>x.seed.ask==='sound'))assert(job.joints.some(j=>j!=='gap'));});
+  return out;
+}
+
+// Public inspection API; gameplay can continue using the reference lexical names.
+if(typeof globalThis!=='undefined')globalThis.JOINT_ENGINE={F,add,sub,mul,div,eq,lt,minF,num,str,noteWhole,toBeats,midiOf,hz,stepOf,samePitch,parseNotes,parseJoints,makeJob,durOf,starts,totalBeats,barBeats,fitsBars,onBar,canTie,withJoint,validJoints,gapBeats,sounds,bells,streams,toCurves,readCurves,ambiguous,singleNote,whyTie,beatsToSec,schedule,inspect,expectHeld,pressPlan,judgeHold,solfa,noteKo,beatsKo,soundLine,fromStr,longest,countAnswer,countChoices,countCause,countLabel,firstCause,wordKind,tagsOf,briefText,causeText,countText,valveText,runEngineTests};
+
+// v1.0 의뢰 씨앗(일곱 작업일, 49건). 정답표와 문구는 전부 엔진이 이 씨앗에서 계산한다.
+const DAYS = [
+  { id: "d0", name: "물길 읽기", tools: "", jobs: [
+    { id: "d0-01", ask: "count", q: "bells", reveal: "before", meter: "4/4", notes: "C4/4 D4/4 E4/4 C4/4", joints: "ggg" },
+    { id: "d0-02", ask: "count", q: "bells", reveal: "before", meter: "3/4", notes: "E4/4 G4/4 E4/4", joints: "gg" },
+    { id: "d0-03", ask: "count", q: "longest", reveal: "before", meter: "4/4", notes: "C4/2 E4/4 G4/4", joints: "gg" },
+    { id: "d0-04", ask: "count", q: "bells", meter: "3/4", notes: "E4/4 E4/4 E4/4", joints: "gg" },
+    { id: "d0-05", ask: "count", q: "longest", meter: "3/4", notes: "G4/2 E4/4", joints: "g" },
+    { id: "d0-06", ask: "count", q: "bells", meter: "4/4", notes: "C4/4 C4/4 D4/2", joints: "gg", final: true },
+  ] },
+  { id: "d1", name: "붙이기", tools: "gt", jobs: [
+    { id: "d1-01", ask: "word", meter: "2/4", notes: "C4/4 C4/4", joints: "t" },
+    { id: "d1-02", ask: "count", q: "bells", meter: "2/4", notes: "C4/4 C4/4", joints: "t" },
+    { id: "d1-03", ask: "count", q: "longest", meter: "4/4", notes: "E4/4 E4/4 G4/4 G4/4", joints: "tgg" },
+    { id: "d1-04", ask: "score", meter: "4/4", notes: "C4/4 C4/4 E4/4 E4/4", joints: "tgt" },
+    { id: "d1-05", ask: "score", meter: "4/4", notes: "G4/4 E4/4 E4/4 C4/4", joints: "gtg" },
+    { id: "d1-06", ask: "score", meter: "3/4", notes: "D4/4 D4/4 D4/4", joints: "tg" },
+    { id: "d1-07", ask: "score", meter: "4/4", notes: "E4/4 E4/4 E4/4 C4/4", joints: "gtg", final: true },
+  ] },
+  { id: "d2", name: "붙임의 셈", tools: "gt", jobs: [
+    { id: "d2-01", ask: "word", meter: "4/4", notes: "C4/4 C4/4 D4/4 D4/4", joints: "tgt" },
+    { id: "d2-02", ask: "score", meter: "3/4", notes: "C4/2 C4/4", joints: "t" },
+    { id: "d2-03", ask: "count", q: "longest", meter: "3/4", notes: "G4/4 G4/2", joints: "t" },
+    { id: "d2-04", ask: "score", meter: "2/4", notes: "E4/8 E4/8 G4/4", joints: "tg" },
+    { id: "d2-05", ask: "score", meter: "2/4", notes: "C4/4 E4/4 | E4/4 C4/4", joints: "gtg" },
+    { id: "d2-06", ask: "count", q: "longest", meter: "2/4", notes: "G4/4 A4/4 | A4/2", joints: "gt" },
+    { id: "d2-07", ask: "score", meter: "3/4", notes: "C4/2 C4/8 E4/8", joints: "tg" },
+    { id: "d2-08", ask: "score", meter: "3/4", notes: "C4/2 E4/4 | E4/2 C4/4", joints: "gtg", final: true },
+  ] },
+  { id: "d3", name: "잇기", tools: "gst", jobs: [
+    { id: "d3-01", ask: "word", meter: "3/4", notes: "C4/4 D4/4 E4/4", joints: "ss" },
+    { id: "d3-02", ask: "sound", meter: "4/4", notes: "E4/4 D4/4 C4/2", joints: "ss" },
+    { id: "d3-03", ask: "score", meter: "4/4", notes: "C4/4 D4/4 E4/4 F4/4", joints: "sgs" },
+    { id: "d3-04", ask: "score", meter: "4/4", notes: "G4/4 F4/4 E4/4 C4/4", joints: "ssg" },
+    { id: "d3-05", ask: "sound", meter: "4/4", notes: "C4/4 E4/4 G4/4 E4/4", joints: "gss" },
+    { id: "d3-06", ask: "count", q: "bells", meter: "3/4", notes: "C4/4 D4/4 E4/4", joints: "ss" },
+    { id: "d3-07", ask: "score", meter: "4/4", notes: "A4/4 G4/4 E4/4 D4/4", joints: "gsg", final: true },
+  ] },
+  { id: "d4", name: "곡선 읽기", tools: "gst", jobs: [
+    { id: "d4-01", ask: "score", meter: "4/4", notes: "C4/4 C4/4 D4/4 E4/4", joints: "tgg" },
+    { id: "d4-02", ask: "score", meter: "4/4", notes: "C4/4 D4/4 E4/4 E4/4", joints: "sgg" },
+    { id: "d4-03", ask: "score", meter: "4/4", notes: "E4/4 E4/4 G4/2", joints: "ss" },
+    { id: "d4-04", ask: "count", q: "bells", meter: "3/4", notes: "F4/4 F4/4 A4/4", joints: "ss" },
+    { id: "d4-05", ask: "score", meter: "4/4", notes: "G4/4 G4/4 E4/4 E4/4", joints: "sss" },
+    { id: "d4-06", ask: "score", meter: "4/4", notes: "G4/4 G4/4 E4/4 E4/4", joints: "tgt" },
+    { id: "d4-07", ask: "score", meter: "4/4", notes: "D4/4 D4/4 F4/4 F4/4", joints: "ssg", final: true },
+  ] },
+  { id: "d5", name: "겹친 곡선", tools: "gst", jobs: [
+    { id: "d5-01", ask: "score", meter: "4/4", notes: "C4/4 C4/4 D4/4 E4/4", joints: "tss" },
+    { id: "d5-02", ask: "count", q: "bells", meter: "3/4", notes: "A4/4 G4/4 G4/4", joints: "st" },
+    { id: "d5-03", ask: "score", meter: "4/4", notes: "E4/4 D4/4 C4/4 C4/4", joints: "sst" },
+    { id: "d5-04", ask: "score", meter: "2/4", notes: "E4/4 G4/4 | G4/4 E4/4", joints: "sts" },
+    { id: "d5-05", ask: "count", q: "longest", meter: "2/4", notes: "D4/4 F4/4 | F4/4 D4/4", joints: "sts" },
+    { id: "d5-06", ask: "sound", meter: "4/4", notes: "C4/4 C4/4 D4/4 E4/4", joints: "tss" },
+    { id: "d5-07", ask: "score", meter: "4/4", notes: "G4/4 G4/4 E4/4 C4/4", joints: "tsg", final: true },
+  ] },
+  { id: "d6", name: "수리소", tools: "gst", jobs: [
+    { id: "d6-01", ask: "repair", meter: "4/4", notes: "C4/4 C4/4 D4/4 E4/4", joints: "tss", given: "gss" },
+    { id: "d6-02", ask: "repair", meter: "4/4", notes: "E4/4 E4/4 G4/2", joints: "ss", given: "ts" },
+    { id: "d6-03", ask: "repair", meter: "4/4", notes: "G4/4 F4/4 E4/4 C4/4", joints: "ssg", given: "sgg" },
+    { id: "d6-04", ask: "repair", meter: "4/4", notes: "C4/4 D4/4 E4/4 E4/4", joints: "sgg", given: "sgt" },
+    { id: "d6-05", ask: "repair", meter: "4/4", notes: "G4/4 G4/4 E4/4 E4/4", joints: "sss", given: "tst" },
+    { id: "d6-06", ask: "repair", meter: "2/4", notes: "E4/4 G4/4 | G4/4 E4/4", joints: "sts", given: "gss" },
+    { id: "d6-07", ask: "repair", meter: "4/4", notes: "E4/4 E4/4 D4/4 C4/4", joints: "tsg", given: "gss", final: true },
+  ] },
+];
+
+// 작업일의 통과는 첫 의뢰의 ● 수만으로 계산한다. 밸브와 재의뢰는 제외한다.
+const DAY_INFO = [
+  {day:0, name:"물길 읽기", concept:"가로는 시간, 세로는 높이. 음표마다 방울 하나.", pass:5, count:6, tools:"", discovers:[], cards:["plain"]},
+  {day:1, name:"붙이기", concept:"같은 높이의 이웃한 두 음을 붙이면 길이는 합, 방울은 하나.", pass:6, count:7, tools:"gt", discovers:[], cards:["tie"]},
+  {day:2, name:"붙임의 셈", concept:"붙인 길이를 더하고, 마디선을 넘는 소리를 읽어요.", pass:7, count:8, tools:"gt", discovers:["S1"], cards:["tie-dot","tie-bar","tie-need"]},
+  {day:3, name:"잇기", concept:"이음쇠는 틈을 없애요. 음마다 방울은 남아요.", pass:6, count:7, tools:"gst", discovers:["S2"], cards:["slur"]},
+  {day:4, name:"곡선 읽기", concept:"같은 곡선도 양 끝의 음에 따라 다르게 읽어요.", pass:6, count:7, tools:"gst", discovers:["S3","S4"], cards:["slur-same"]},
+  {day:5, name:"겹친 곡선", concept:"이음줄 안의 붙임줄을 따로 읽어요.", pass:6, count:7, tools:"gst", discovers:[], cards:["tie-in-slur"]},
+  {day:6, name:"수리소", concept:"틀린 물길의 까닭을 알아보고 직접 고쳐요.", pass:6, count:7, tools:"gst", discovers:[], cards:[]},
+];
+const CARD_BACK = "관은 비유예요. 곡선의 이름은 양 끝 음이 정해요.";
+const CARDS = [
+  {tag:"plain", title:"따로 내기", first:"d0-01", text:"곡선이 없으면 음표마다 새로 시작해요. 같은 음도 따로 내요."},
+  {tag:"tie", title:"붙임줄", first:"d1-01", text:"같은 높이의 이웃한 두 음만 잇는 곡선이에요. 뒤의 음은 다시 내지 않고 길이를 더해요."},
+  {tag:"tie-dot", title:"점음표와 같은 길이", first:"d2-02", text:"2박 + 1박 = 3박. 점2분음표 하나와 길이가 같아요."},
+  {tag:"tie-bar", title:"마디선을 넘는 붙임줄", first:"d2-05", text:"마디선을 넘는 소리는 붙임줄로 적어요."},
+  {tag:"tie-need", title:"붙임줄로만 적는 길이", first:"d2-07", text:"2½박은 음표 하나로 적을 수 없어요. 붙임줄로 적어요."},
+  {tag:"slur", title:"이음줄", first:"d3-01", text:"음들을 틈 없이 이어요. 음마다 새로 시작해요. 이렇게 잇는 연주를 레가토라고 해요."},
+  {tag:"slur-same", title:"같은 음이 낀 이음줄", first:"d4-03", text:"곡선이 다른 음까지 덮으면 이음줄이에요. 그 안의 같은 음은 다시 내요."},
+  {tag:"tie-in-slur", title:"이음줄 안의 붙임줄", first:"d5-01", text:"곡선이 둘이에요. 안쪽은 붙임줄, 바깥쪽은 이음줄이에요."},
+].map(card => ({...card, back:CARD_BACK}));
+// 비교 장면은 채점하지 않는다. 두 배치의 소리, 방울, 곡선은 엔진에서 계산한다.
+const SCENES = [
+  {id:"S1", title:"같은 길이, 다른 적기", after:"d2-02", day:2,
+   text:"소리가 같아요. 2박 + 1박 = 3박. 점2분음표 하나로도 적을 수 있어요.",
+   a:{meter:"3/4",notes:"C4/2 C4/4",joints:"t"},
+   b:{meter:"3/4",notes:"C4/2.",joints:""}},
+  {id:"S2", title:"틈이 달라요", before:"d3-01", day:3,
+   text:"음도 방울 수도 같아요. 틈만 달라요. 틈이 없으면 이어서 들려요.",
+   a:{meter:"3/4",notes:"C4/4 D4/4 E4/4",joints:"gg"},
+   b:{meter:"3/4",notes:"C4/4 D4/4 E4/4",joints:"ss"}},
+  {id:"S3", title:"같은 곡선의 두 이름", after:"d4-02", day:4,
+   text:"곡선은 똑같이 생겼어요. 이름은 양 끝의 음이 정해요.",
+   a:{meter:"2/4",notes:"C4/4 C4/4",joints:"t"},
+   b:{meter:"2/4",notes:"C4/4 D4/4",joints:"s"}},
+  {id:"S4", title:"두 미 사이를 보세요", after:"d4-03", day:4,
+   text:"방울이 2번, 3번이에요. 두 미 사이에 따로 곡선이 있는지 보세요.",
+   a:{meter:"4/4",notes:"E4/4 E4/4 G4/2",joints:"ts"},
+   b:{meter:"4/4",notes:"E4/4 E4/4 G4/2",joints:"ss"}},
+];
+
+// 8 STORAGE · SaveV1; blocked storage falls back to memory without losing this visit.
+const SAVE_KEY = "ppg_save_v1";
+const SAVE_BACKUP_KEY = "ppg_save_v1_backup";
+const SAVE_CARD_KEYS = ["plain", "tie", "tie-dot", "tie-bar", "tie-need", "slur", "slur-same", "tie-in-slur"];
+const saveClone = value => JSON.parse(JSON.stringify(value));
+function defaultSave() {
+  return {
+    version: 1,
+    settings: { volume: 0.8, muted: false, slow: false, holdOffsetMs: 0, motion: "system", tutorialSeen: false, soundChecked: false },
+    days: Object.fromEntries(Array.from({length:7}, (_, i) => ["d" + i, {passed:false, stamp:0, runs:0, best:0}])),
+    cards: Object.fromEntries(SAVE_CARD_KEYS.map(tag => [tag, {got:false, valve:0}])),
+    scenes: [],
+    stats: { jobs:0, clean:0, valves:0, smooth:0 },
+    active: null
+  };
+}
+function validateSave(value, dayDefinitions) {
+  const object = v => v !== null && typeof v === "object" && !Array.isArray(v);
+  const integer = v => Number.isInteger(v) && v >= 0;
+  if (!object(value) || value.version !== 1) return null;
+  const defs = dayDefinitions || (typeof DAYS !== "undefined" ? DAYS : null);
+  const counts = defs ? Object.fromEntries(defs.map(day => [day.id, day.jobs.length])) : {d0:6,d1:7,d2:8,d3:7,d4:7,d5:7,d6:7};
+  const out = defaultSave();
+  if (value.settings !== undefined) {
+    if (!object(value.settings)) return null;
+    for (const [key, base] of Object.entries(out.settings)) {
+      if (!(key in value.settings)) continue;
+      const v = value.settings[key];
+      if (typeof v !== typeof base) return null;
+      if (typeof base === "number" && !Number.isFinite(v)) return null;
+      if (key === "volume" && (v < 0 || v > 1)) return null;
+      if (key === "motion" && !["system", "reduced", "full"].includes(v)) return null;
+      out.settings[key] = v;
+    }
+  }
+  if (value.days !== undefined) {
+    if (!object(value.days)) return null;
+    for (const key of Object.keys(out.days)) {
+      if (!(key in value.days)) continue;
+      const day = value.days[key];
+      if (!object(day)) return null;
+      const fields = out.days[key];
+      for (const prop of Object.keys(fields)) {
+        if (!(prop in day)) continue;
+        if (prop === "passed" ? typeof day[prop] !== "boolean" : !integer(day[prop])) return null;
+        fields[prop] = day[prop];
+      }
+      if (fields.stamp > 2 || fields.best > counts[key]) return null;
+    }
+  }
+  if (value.cards !== undefined) {
+    if (!object(value.cards)) return null;
+    for (const key of SAVE_CARD_KEYS) {
+      if (!(key in value.cards)) continue;
+      const card = value.cards[key];
+      if (!object(card)) return null;
+      if (card.got !== undefined && typeof card.got !== "boolean") return null;
+      if (card.valve !== undefined && (!integer(card.valve) || card.valve > 3)) return null;
+      out.cards[key] = {got:card.got === undefined ? false : card.got, valve:card.valve === undefined ? 0 : card.valve};
+    }
+  }
+  if (value.scenes !== undefined) {
+    if (!Array.isArray(value.scenes) || value.scenes.some(id => !["S1", "S2", "S3", "S4"].includes(id))) return null;
+    out.scenes = [...new Set(value.scenes)];
+  }
+  if (value.stats !== undefined) {
+    if (!object(value.stats)) return null;
+    for (const key of Object.keys(out.stats)) {
+      if (!(key in value.stats)) continue;
+      if (!integer(value.stats[key])) return null;
+      out.stats[key] = value.stats[key];
+    }
+  }
+  if (value.active !== undefined && value.active !== null) {
+    const a = value.active, n = object(a) ? counts[a.day] : null;
+    if (!n || !integer(a.index) || a.index >= n || !Array.isArray(a.retry) || !Array.isArray(a.results)) return null;
+    if (a.retry.some(i => !integer(i) || i >= n - 1) || new Set(a.retry).size !== a.retry.length) return null;
+    if (a.results.length > n || Object.keys(a.results).length !== a.results.length || a.results.some(r => !object(r) || ![1,2].includes(r.recipe) || ![0,1,2,3,4].includes(r.valve))) return null;
+    if (a.repeating !== undefined && typeof a.repeating !== "boolean") return null;
+    if (a.retryPos !== undefined && (!integer(a.retryPos) || a.retryPos > a.retry.length)) return null;
+    if (a.phase !== undefined && !["count", "pipe", "valve", "deliver"].includes(a.phase)) return null;
+    const cursor = a.retryPos === undefined ? 0 : a.retryPos;
+    if (a.repeating === true && (cursor >= a.retry.length || a.retry[cursor] !== a.index)) return null;
+    out.active = {day:a.day, index:a.index, retry:[...a.retry], results:a.results.map(r => ({recipe:r.recipe, valve:r.valve}))};
+    // Optional v1 extensions preserve the retry cursor and delivered screen across reloads.
+    if (a.repeating !== undefined) out.active.repeating = a.repeating;
+    if (a.retryPos !== undefined) out.active.retryPos = a.retryPos;
+    if (a.phase !== undefined) out.active.phase = a.phase;
+  }
+  return out;
+}
+class WorkshopStorage {
+  constructor(storage) {
+    this.memory = defaultSave();
+    this.backupRaw = null;
+    this.lastError = null;
+    this.persistent = false;
+    try {
+      this.storage = arguments.length ? storage : window.localStorage;
+      if (!this.storage || typeof this.storage.getItem !== "function" || typeof this.storage.setItem !== "function") throw new Error("Storage unavailable");
+      // A readable previous save remains usable even if a later quota check fails.
+      const existing = this.storage.getItem(SAVE_KEY);
+      if (existing !== null) {
+        let candidate = null;
+        try { candidate = validateSave(JSON.parse(existing)); } catch (_) {}
+        if (candidate) this.memory = candidate;
+        else this.backupRaw = existing;
+      }
+      const probe = SAVE_KEY + "_probe";
+      this.storage.setItem(probe, "1");
+      this.storage.removeItem(probe);
+      this.persistent = true;
+    } catch (error) { this.lastError = error; this.storage = null; }
+  }
+  load() {
+    if (!this.persistent) return saveClone(this.memory);
+    let raw;
+    try { raw = this.storage.getItem(SAVE_KEY); }
+    catch (error) { this.lastError = error; this.persistent = false; return saveClone(this.memory); }
+    if (raw === null) return saveClone(this.memory);
+    let parsed = null;
+    try { parsed = validateSave(JSON.parse(raw)); } catch (_) { /* Corruption is backed up below. */ }
+    if (parsed) { this.memory = parsed; return saveClone(parsed); }
+    this.backupRaw = raw;
+    this.memory = defaultSave();
+    try {
+      // Preserve the exact raw string before replacing the invalid active save.
+      this.storage.setItem(SAVE_BACKUP_KEY, raw);
+      this.storage.setItem(SAVE_KEY, JSON.stringify(this.memory));
+    } catch (error) { this.lastError = error; this.persistent = false; }
+    return saveClone(this.memory);
+  }
+  save(value) {
+    const normalized = validateSave(value);
+    if (!normalized) throw new TypeError("Invalid SaveV1 data");
+    this.memory = normalized;
+    if (!this.persistent) return false;
+    try { this.storage.setItem(SAVE_KEY, JSON.stringify(normalized)); return true; }
+    catch (error) { this.lastError = error; this.persistent = false; return false; }
+  }
+  reset() {
+    this.save(defaultSave());
+    return saveClone(this.memory);
+  }
+}
+function runStorageTests() {
+  const checks = [];
+  const check = (id, name, fn) => { try { fn(); checks.push({id,name,pass:true,error:null}); } catch (error) { checks.push({id,name,pass:false,error:error.message}); } };
+  const expect = (condition, message) => { if (!condition) throw new Error(message); };
+  const backend = () => { const records = new Map(); return {getItem:k => records.has(k) ? records.get(k) : null, setItem:(k,v) => records.set(k,String(v)), removeItem:k => records.delete(k)}; };
+  check("SV-01", "저장 version:1 왕복", () => {
+    const store = backend(), first = new WorkshopStorage(store), data = defaultSave();
+    data.settings.slow = true; data.days.d0 = {passed:true,stamp:1,runs:2,best:5};
+    data.active = {day:"d1",index:1,retry:[0],results:[{recipe:1,valve:4}]};
+    first.save(data);
+    expect(JSON.stringify(new WorkshopStorage(store).load()) === JSON.stringify(data), "SaveV1 round trip differs");
+    expect(validateSave({version:1,settings:{slow:true}}).settings.volume === 0.8, "Missing defaults were not restored");
+    data.active = {day:"d1",index:2,retry:[0,2],results:[{recipe:1,valve:2},{recipe:2,valve:0},{recipe:1,valve:0}],repeating:true,retryPos:1,phase:"deliver"};
+    first.save(data);
+    expect(JSON.stringify(new WorkshopStorage(store).load().active) === JSON.stringify(data.active), "Retry cursor/phase did not survive reload");
+  });
+  check("SV-02", "손상·미래 버전 원본 보존", () => {
+    for (const raw of ["{invalid", '{"version":2}', '{"version":1,"settings":{"slow":4}}']) {
+      const store = backend(); store.setItem(SAVE_KEY,raw);
+      const data = new WorkshopStorage(store).load();
+      expect(data.version === 1 && data.stats.jobs === 0, "Invalid save was not reset");
+      expect(store.getItem(SAVE_BACKUP_KEY) === raw, "Original save was not backed up");
+    }
+  });
+  check("SV-03", "인메모리 폴백", () => {
+    const blocked = {getItem:() => {throw new Error("blocked");},setItem:() => {throw new Error("blocked");},removeItem:() => {}};
+    const instance = new WorkshopStorage(blocked), data = defaultSave(); data.stats.jobs = 5;
+    expect(instance.save(data) === false && instance.persistent === false && instance.load().stats.jobs === 5, "Blocked storage loses memory progress");
+    const store = backend(), quota = new WorkshopStorage(store); store.setItem = () => {throw new Error("quota");};
+    expect(quota.save(data) === false && quota.load().stats.jobs === 5, "Quota fallback loses memory progress");
+  });
+  check("SV-04", "도면 카드 키 저장 왕복", () => {
+    const store = backend(), instance = new WorkshopStorage(store), data = defaultSave();
+    data.cards["tie-bar"] = {got:true,valve:3}; data.cards["tie-in-slur"] = {got:true,valve:2};
+    instance.save(data); const loaded = new WorkshopStorage(store).load();
+    expect(loaded.cards["tie-bar"].got && loaded.cards["tie-in-slur"].valve === 2, "Hyphenated keys changed");
+    expect(!("lowOk" in loaded), "Visit-only field persisted");
+  });
+  return checks;
+}
+
+// ── 그리기: 설계도와 물길은 같은 X(박)를 쓴다. 물길의 세로축은 도~라 여섯 줄로 고정한다 ──
+const MIN_H = 545;                                                                  // 고정 줄 238(44+50+40+104) + 줄 사이와 여백 36 + 무대 최소 271
+const GL = 46, PR = 8, SCORE_H = 92, STAFF_TOP = 14, LG = 9, PTOP = 28, TH = 14, RULER = 18, CHIPS = 42;
+const yOf = (step) => STAFF_TOP + 4 * LG - (step - 2) * (LG / 2);                   // 첫째 줄의 미 = step 2
+const CLEF = `<path class="clef" d="M15.2 9.5C15.2 5.5 16.2 3.5 17.6 3.5C19.4 3.5 20.4 6 20.4 9C20.4 14.5 14.5 19.5 10.5 25C7.5 29 6 32.5 6 36.5C6 43.5 10.5 49.5 15.5 49.5C19.5 49.5 22 46.5 22 42.5C22 38.5 19.3 35.5 15.8 35.5C12.6 35.5 10.4 37.8 10.4 40.6C10.4 43 12 44.8 14 45.2M15.2 9.5L18 55.5C18.3 59.5 16.3 62 13.6 62C11.4 62 9.8 60.6 9.8 58.6"/><circle class="clefDot" cx="11.4" cy="58.2" r="1.9"/>`;
+const P = { g: null, waters: [], risers: [], bells: [] };
+function geo() {
+  const stage = $("stage"), W = Math.max(240, stage.clientWidth), H = stage.clientHeight, total = num(totalBeats(truthNow())), ppb = (W - GL - PR) / total;
+  const row = Math.max(13, Math.min(24, Math.floor((H - 4 - SCORE_H - CHIPS - (PTOP + TH + 6 + RULER)) / 5)));     // 남는 높이를 다섯 칸에 나눈다
+  return { W, H, total, ppb, row, X: (b) => GL + b * ppb };
+}
+function buildScore(g, job, showCurves) {
+  const st = starts(job).map(num), C = showCurves ? toCurves(job) : { ties: [], slurs: [], all: [] }, cx = (i) => g.X(st[i]) + 13, y = (i) => yOf(stepOf(job.notes[i].p)), bottom = STAFF_TOP + 4 * LG;
+  let h = "";
+  for (let i = 0; i < 5; i++) h += `<line class="staff" x1="4" x2="${g.W - 4}" y1="${STAFF_TOP + i * LG}" y2="${STAFF_TOP + i * LG}"/>`;
+  h += CLEF + `<text class="meter" x="34" y="${STAFF_TOP + LG}">${job.meter[0]}</text><text class="meter" x="34" y="${STAFF_TOP + 3 * LG}">${job.meter[1]}</text>`;
+  for (let b = job.meter[0]; b < g.total - 1e-9; b += job.meter[0]) h += `<line class="bar" x1="${g.X(b)}" x2="${g.X(b)}" y1="${STAFF_TOP}" y2="${bottom}"/>`;
+  h += `<line class="bar" x1="${g.W - 10}" x2="${g.W - 10}" y1="${STAFF_TOP}" y2="${bottom}"/><rect class="barEnd" x="${g.W - 7}" y="${STAFF_TOP}" width="3" height="${4 * LG}"/>`;
+  job.notes.forEach((nt, i) => {
+    const x = cx(i), yy = y(i), step = stepOf(nt.p);
+    if (step <= 0) h += `<line class="staff" x1="${x - 10}" x2="${x + 10}" y1="${yOf(0)}" y2="${yOf(0)}"/>`;      // 가온 도의 덧줄
+    h += `<ellipse class="head${nt.den <= 2 ? " open" : ""}" cx="${x}" cy="${yy}" rx="5.8" ry="4.2" transform="rotate(-22 ${x} ${yy})"/>`;
+    if (nt.den >= 2) h += `<line class="stem" x1="${x + 5.3}" x2="${x + 5.3}" y1="${yy - 1.5}" y2="${yy - 29}"/>`;
+    if (nt.den >= 8) h += `<path class="flag" d="M${x + 5.3} ${yy - 29}c1 6 8 8 6.5 17"/>`;
+    for (let d = 0; d < nt.dots; d++) h += `<circle class="dot" cx="${x + 11 + d * 4.5}" cy="${step % 2 === 0 ? yy - LG / 2 : yy}" r="1.7"/>`;
+  });
+  const tied = new Set(); C.ties.forEach(([i, j]) => { tied.add(i); tied.add(j); });
+  C.ties.forEach(([i, j]) => {                                                       // 붙임줄과 이음줄을 같은 선으로 그린다
+    const x1 = cx(i) + 4.5, x2 = cx(j) - 4.5, y0 = y(i) + 7.5, dx = Math.min(14, (x2 - x1) * 0.28);
+    h += `<path class="curve" d="M${x1} ${y0}C${x1 + dx} ${y0 + 6.5} ${x2 - dx} ${y0 + 6.5} ${x2} ${y0}"/>`;
+  });
+  C.slurs.forEach(([a, b]) => {
+    const off = (i) => (tied.has(i) ? 17 : 8), x1 = cx(a), x2 = cx(b), y1 = y(a) + off(a), y2 = y(b) + off(b);
+    let low = Math.max(y1, y2); for (let i = a; i <= b; i++) low = Math.max(low, y(i) + off(i));
+    const cy = low + 8 + Math.min(5, (x2 - x1) / 50);
+    h += `<path class="curve" d="M${x1} ${y1}C${x1 + (x2 - x1) * 0.22} ${cy} ${x1 + (x2 - x1) * 0.78} ${cy} ${x2} ${y2}"/>`;
+  });
+  h += `<line id="scoreHead" class="headline" x1="0" x2="0" y1="4" y2="${SCORE_H - 4}"/>`;
+  const sv = $("score");
+  sv.setAttribute("viewBox", `0 0 ${g.W} ${SCORE_H}`); sv.setAttribute("height", String(SCORE_H));
+  sv.setAttribute("aria-label", `설계도. ${job.meter[0]}/${job.meter[1]}박자. ${job.notes.map((nt) => solfa(nt.p) + " " + noteKo(nt.den, nt.dots)).join(", ")}. 곡선 ${C.all.length}개${C.all.length ? ": " + C.all.map(([a, b]) => `${a + 1}번째 음에서 ${b + 1}번째 음까지`).join(", ") : ""}.`);
+  sv.innerHTML = h;
+}
+function buildPipes(g, job, o) {
+  const st = starts(job).map(num), yc = (p) => PTOP + (5 - stepOf(p)) * g.row + TH / 2, rulerY = PTOP + 5 * g.row + TH + 6, H = rulerY + RULER, list = sounds(job);
+  let back = "", tubes = "", front = "";
+  for (let s = 0; s <= 5; s++) {
+    const yy = PTOP + (5 - s) * g.row + TH / 2;
+    back += `<line class="rowline" x1="${GL}" x2="${g.W - PR}" y1="${yy}" y2="${yy}"/><text class="rowname" x="10" y="${yy + 4}">${solfa({ letter: s, oct: 4 })}</text>`;
+  }
+  for (let b = job.meter[0]; b < g.total - 1e-9; b += job.meter[0]) back += `<line class="pbar" x1="${g.X(b)}" x2="${g.X(b)}" y1="${PTOP - 16}" y2="${rulerY}"/>`;
+  P.waters = []; P.risers = []; P.bells = [];
+  list.forEach((s, i) => {
+    const b0 = num(s.start), b1 = b0 + num(s.len), x0 = g.X(b0), x1 = g.X(b1), yy = yc(s.p);
+    tubes += `<rect class="tube" x="${x0 + 1}" y="${yy - TH / 2}" width="${x1 - x0 - 2}" height="${TH}" rx="7"/><rect class="water auto" x="${x0 + 3.5}" y="${yy - TH / 2 + 3}" width="0" height="${TH - 6}" rx="4"/>`;
+    P.waters.push({ b0, b1, w: x1 - x0 - 7, y: yy - TH / 2 + 3 });
+    for (let k = s.from; k < s.to; k++) front += `<line class="seam" x1="${g.X(st[k + 1])}" x2="${g.X(st[k + 1])}" y1="${yy - TH / 2 - 3}" y2="${yy + TH / 2 + 3}"/>`;   // 붙인 자리는 흐린 점선으로만 남는다
+    if (s.after === "slur") {                                                        // 이음쇠. 높이가 다르면 세로 관으로 꺾인다
+      const xb = g.X(st[s.to + 1]), y2 = yc(list[i + 1].p);
+      if (y2 !== yy) {
+        back += `<rect class="riser" x="${xb - 5}" y="${Math.min(yy, y2)}" width="10" height="${Math.abs(y2 - yy)}"/><rect class="riserWater" x="${xb - 2.5}" y="${Math.min(yy, y2)}" width="5" height="${Math.abs(y2 - yy)}"/>`;
+        P.risers.push({ b: st[s.to + 1] });
+        front += `<rect class="coupler" x="${xb - 4}" y="${y2 - TH / 2 - 3}" width="8" height="${TH + 6}" rx="2"/>`;
+      }
+      front += `<rect class="coupler" x="${xb - 4}" y="${yy - TH / 2 - 3}" width="8" height="${TH + 6}" rx="2"/>`;
+    }
+    front += `<g class="bell"><circle class="rip" cx="${x0 + 12}" cy="${yy - TH / 2 - 11}" r="12.5"/><circle class="b" cx="${x0 + 12}" cy="${yy - TH / 2 - 11}" r="8"/><text x="${x0 + 12}" y="${yy - TH / 2 - 11}">${i + 1}</text></g>`;
+    P.bells.push({ b: b0 });
+    if (x1 - x0 >= 58) front += `<text class="len" x="${x0 + 25}" y="${yy - TH / 2 - 7}">${beatsKo(s.dur)}</text>`;
+  });
+  let ruler = `<line class="ruler" x1="${GL}" x2="${g.W - PR}" y1="${rulerY}" y2="${rulerY}"/>`;
+  for (let b = 0; b <= g.total + 1e-9; b++) {
+    const last = b + 1 > g.total + 1e-9;
+    ruler += `<line class="ruler" x1="${g.X(b)}" x2="${g.X(b)}" y1="${rulerY}" y2="${rulerY + 4}"/><text class="tick" x="${last ? g.W - 1 : g.X(b)}" y="${rulerY + 15}" text-anchor="${last ? "end" : "middle"}">${b}${last ? "박" : ""}</text>`;
+  }
+  const sv = $("pipes");
+  sv.setAttribute("viewBox", `0 0 ${g.W} ${H}`); sv.setAttribute("height", String(H));
+  sv.setAttribute("aria-label", o.hideBells ? "물길. 방울은 물을 틀면 보여요." : `물길. ${soundLine(job)}. 방울 ${list.length}번.`);
+  sv.classList.toggle("hidebells", !!o.hideBells);
+  sv.innerHTML = back + tubes + `<g id="handWater"></g>` + front + ruler + `<line id="head" class="headline" x1="0" x2="0" y1="6" y2="${rulerY}"/>`;
+  const el = $("joints"), act = document.activeElement, keepK = act && act.classList && act.classList.contains("joint") ? act.dataset.k : null;
+  const xs = st.slice(1).map((b) => g.X(b)), gap = xs.length > 1 ? Math.min(...xs.slice(1).map((x, i) => x - xs[i])) : 60, w = Math.max(36, Math.min(46, gap - 2));
+  el.innerHTML = job.joints.map((jt, k) => `<button type="button" class="joint" data-k="${k}" style="left:${xs[k]}px;width:${w}px" aria-label="${k + 1}번 이음매. ${wa(solfa(job.notes[k].p))} ${solfa(job.notes[k + 1].p)} 사이. 지금 ${JOINT_KO[jt]}."><span class="chip ${jt}"><i>${k + 1}</i>${JOINT_KO[jt]}</span></button>`).join("");
+  if (keepK !== null && keepK !== undefined) { const b = el.querySelector(`.joint[data-k="${keepK}"]`); if (b) b.focus(); }
+  P.g = g;
+}
+// JT8 illustration: inline vector workshop, no remote asset requests.
+const WORKSHOP_ART = `<svg viewBox="0 0 620 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="강철 관과 놋쇠 이음쇠로 소리를 잇는 작은 음악 공방">
+<defs><pattern id="work-grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#c6d3db" stroke-width=".7"/></pattern><linearGradient id="metal" x2="0" y2="1"><stop stop-color="#f6f9fa"/><stop offset=".45" stop-color="#dfe7ec"/><stop offset="1" stop-color="#b7c7d1"/></linearGradient><linearGradient id="brass-fill" x2="0" y2="1"><stop stop-color="#fff3d7"/><stop offset="1" stop-color="#e8c887"/></linearGradient></defs>
+<rect x="8" y="20" width="604" height="218" rx="18" fill="#f5f8fa" stroke="#c6d3db"/><rect x="8" y="20" width="604" height="218" rx="18" fill="url(#work-grid)" opacity=".7"/>
+<path d="M38 210h544" stroke="#5d707d" stroke-width="2"/><rect x="40" y="199" width="540" height="11" rx="4" fill="#c6d3db"/>
+<g fill="url(#metal)" stroke="#5d707d" stroke-width="2"><rect x="58" y="143" width="149" height="25" rx="10"/><rect x="217" y="143" width="125" height="25" rx="10"/><rect x="333" y="91" width="22" height="77" rx="9"/><rect x="342" y="91" width="151" height="25" rx="10"/></g>
+<g fill="#1f86bf"><rect x="63" y="151" width="137" height="9" rx="4"/><rect x="222" y="151" width="122" height="9" rx="4"/><rect x="339" y="98" width="9" height="62" rx="4"/><rect x="342" y="99" width="143" height="9" rx="4"/></g>
+<g fill="url(#brass-fill)" stroke="#8a5407" stroke-width="2"><rect x="326" y="137" width="35" height="38" rx="5"/><rect x="326" y="84" width="35" height="38" rx="5"/><rect x="475" y="84" width="17" height="39" rx="4"/></g>
+<path d="M123 139v35" stroke="#5d707d" stroke-dasharray="3 4" opacity=".7"/>
+<g transform="translate(406 28) rotate(5)"><rect width="110" height="49" rx="5" fill="#fff" stroke="#c6d3db"/><g stroke="#8d9da6" stroke-width=".6"><path d="M9 13h92M9 19h92M9 25h92M9 31h92M9 37h92"/></g><g fill="#15232c"><ellipse cx="28" cy="34" rx="4" ry="3"/><ellipse cx="68" cy="28" rx="4" ry="3"/></g><path d="M32 34V11m40 17V5M29 39q20 16 39-4" fill="none" stroke="#15232c" stroke-width="1.5"/></g>
+<g transform="translate(88 48)"><path d="M24 3v11" stroke="#8a5407" stroke-width="3"/><circle cx="24" cy="4" r="4" fill="#f4e3c1" stroke="#8a5407" stroke-width="2"/><path d="M4 57c5-9 6-14 6-24 0-19 28-19 28 0 0 10 1 15 6 24Z" fill="url(#brass-fill)" stroke="#8a5407" stroke-width="2"/><rect x="1" y="55" width="46" height="9" rx="4" fill="#f4e3c1" stroke="#8a5407" stroke-width="2"/><path d="M17 64a7 7 0 0 0 14 0" fill="#8a5407"/><circle cx="18" cy="38" r="2" fill="#15232c"/><circle cx="30" cy="38" r="2" fill="#15232c"/><path d="M19 45q5 5 10 0" fill="none" stroke="#15232c" stroke-width="1.8" stroke-linecap="round"/></g>
+<g transform="translate(521 131)"><path d="M15 0v15m-12 0h24M15 15v40" fill="none" stroke="#5d707d" stroke-width="5" stroke-linecap="round"/><rect x="4" y="28" width="22" height="13" rx="4" fill="#f4e3c1" stroke="#8a5407" stroke-width="2"/><circle cx="15" cy="5" r="12" fill="#fff" stroke="#14607c" stroke-width="5"/><path d="M3 5h24M15-7v24" stroke="#14607c" stroke-width="3"/></g>
+<g fill="#465864" font-family="system-ui,sans-serif" font-size="12" font-weight="700"><text x="64" y="192">시간을 잇고</text><text x="388" y="192">소리를 발견해요</text></g></svg>`;
+function bellCharacter(mood = "normal") {
+  const mouth = mood === "happy" ? 'M22 39q8 10 16 0' : mood === "thinking" ? 'M25 42q5-3 10 0' : 'M25 40q5 4 10 0';
+  return `<svg viewBox="0 0 60 70" role="img" aria-label="놋쇠 방울"><path d="M30 3v8" stroke="#8a5407" stroke-width="3"/><path d="M8 55c6-9 6-15 6-23 0-22 32-22 32 0 0 8 0 14 6 23Z" fill="#f4e3c1" stroke="#8a5407" stroke-width="2"/><rect x="5" y="53" width="50" height="9" rx="4" fill="#f4e3c1" stroke="#8a5407" stroke-width="2"/><path d="M23 63a7 7 0 0 0 14 0" fill="#8a5407"/><circle cx="23" cy="32" r="2" fill="#15232c"/><circle cx="37" cy="32" r="2" fill="#15232c"/><path d="${mouth}" stroke="#15232c" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>`;
+}
+
+/* JOINT · Web Audio scheduling and valve input.
+ * The synthesis/envelopes and timing constants are copied from Appendix C.7–C.8.
+ * Adaptation: DOM writes are callbacks, so the one-file application owns its UI.
+ */
+class WorkshopAudio {
+  constructor(options = {}) {
+    this.options = options;
+    this.ctx = null;
+    this.master = null;
+    this.noiseBuf = null;
+    this.wave = null;
+    this.run = null;
+    this.valve = null;
+    this.live = new Set();
+    this.raf = 0;
+    this.volume = 1;
+    this.valved = false;
+    this.endedAt = -1e9;
+    this._now = options.now || (() => performance.now());
+    this._raf = options.raf || ((fn) => requestAnimationFrame(fn));
+    this._caf = options.cancelRaf || ((id) => cancelAnimationFrame(id));
+    this._visibility = () => {
+      if (typeof document !== 'undefined' && document.hidden && this.run) this.abort('hidden');
+    };
+    this._blur = () => { if (this.run) this.abort('blur'); };
+    this._stateChange = () => {
+      this._notifyState();
+      const r = this.run;
+      if (r && !r.perf && this.ctx.state !== 'running' && r.audioStarted) this.abort('sound');
+    };
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', this._visibility);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('blur', this._blur);
+      window.addEventListener('pagehide', this._blur);
+    }
+  }
+
+  _emit(name, value) {
+    if (typeof this.options[name] === 'function') this.options[name](value);
+  }
+
+  _notifyState() {
+    this._emit('onState', { enabled: !!this.ctx && this.ctx.state === 'running', state: this.ctx ? this.ctx.state : 'unavailable', fallback: !!this.run && this.run.perf });
+  }
+
+  initialize() {
+    try {
+      if (!this.ctx || this.ctx.state === 'closed') {
+        const AC = this.options.contextFactory || (typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext));
+        if (!AC) { this._notifyState(); return null; }
+        this.ctx = new AC();
+        this.master = this.ctx.createGain();
+        this.master.gain.value = 0.8 * this.volume;
+        this.master.connect(this.ctx.destination);
+        this.noiseBuf = this.ctx.createBuffer(1, this.ctx.sampleRate, this.ctx.sampleRate);
+        const d = this.noiseBuf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        this.wave = this.ctx.createPeriodicWave(new Float32Array(7), new Float32Array([0, 1, 0.42, 0.26, 0.1, 0.06, 0.03]));
+        this.ctx.addEventListener('statechange', this._stateChange);
+      }
+      if (this.ctx.state !== 'running') {
+        const p = this.ctx.resume();
+        if (p && p.catch) p.catch(() => this._notifyState());
+      }
+      this._notifyState();
+      return this.ctx;
+    } catch (error) {
+      this._emit('onError', error);
+      this._notifyState();
+      return null;
+    }
+  }
+
+  setVolume(value) {
+    this.volume = Math.max(0, Math.min(1, Number(value) || 0));
+    if (this.master && this.ctx) this.master.gain.setValueAtTime(0.8 * this.volume, this.ctx.currentTime);
+  }
+
+  _keep(node) {
+    this.live.add(node);
+    node.addEventListener('ended', () => this.live.delete(node));
+    return node;
+  }
+
+  _silence() {
+    this.live.forEach((node) => { try { node.stop(); } catch (_) { /* already ended */ } });
+    this.live.clear();
+  }
+
+  _pipeTone(midi, when, len, attack, release) {
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    const peak = 0.24, up = attack === 'legato' ? 0.03 : 0.018, end = when + len;
+    o.setPeriodicWave(this.wave);
+    o.frequency.setValueAtTime(hz(midi), when);
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.linearRampToValueAtTime(peak, when + up);
+    if (release === 'over') {
+      g.gain.setValueAtTime(peak, end);
+      g.gain.linearRampToValueAtTime(0.0001, end + 0.03);
+    } else if (release === 'dip') {
+      g.gain.setValueAtTime(peak, Math.max(when + up, end - 0.07));
+      g.gain.linearRampToValueAtTime(0.0001, end - 0.012);
+    } else {
+      g.gain.setValueAtTime(peak, Math.max(when + up, end - 0.04));
+      g.gain.linearRampToValueAtTime(0.0001, end);
+    }
+    o.connect(g); g.connect(this.master); o.start(when); o.stop(end + 0.06);
+    this._keep(o);
+  }
+
+  _burst(when, dur, freq, q, peak) {
+    const s = this.ctx.createBufferSource(), f = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+    s.buffer = this.noiseBuf; f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
+    g.gain.setValueAtTime(peak, when);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+    s.connect(f); f.connect(g); g.connect(this.master); s.start(when); s.stop(when + dur + 0.02);
+    return this._keep(s);
+  }
+
+  _drop(when, fresh) { return this._burst(when, 0.035, 1900, 1.4, fresh ? 0.22 : 0.08); }
+  _tick(when, strong) { return this._burst(when, 0.035, strong ? 2600 : 1700, 6, strong ? 0.6 : 0.35); }
+  latency() { return this.ctx ? this.ctx.outputLatency || this.ctx.baseLatency || 0 : 0; }
+  clock() { return this.run && this.run.perf ? this._now() / 1000 : this.ctx.currentTime - this.latency(); }
+
+  // A pure, inspectable plan. Every audio event is submitted before the first frame.
+  static buildPlan(job, options = {}) {
+    const bpm = options.bpm || 60, beat = 60 / bpm, kind = options.kind || 'trial';
+    const valving = kind === 'hand' || kind === 'machine';
+    const countIn = valving ? (options.countIn === undefined ? 4 : options.countIn) : 0;
+    const total = num(totalBeats(job)), ticks = [];
+    if (valving) {
+      for (let k = 0; k < countIn; k++) ticks.push({ t: k * beat, strong: k === 0 });
+      for (let k = 0; k <= Math.ceil(total - 1e-9); k++) ticks.push({ t: (countIn + k) * beat, strong: k % job.meter[0] === 0 });
+    }
+    return { kind, bpm, beat, total, countIn, ticks, tones: kind === 'hand' ? [] : schedule(job, bpm), holds: valving ? pressPlan(job).map(([a, b]) => [num(a), num(b)]) : [], duration: (countIn + total) * beat + 0.42 };
+  }
+
+  play(jobOrNotes, jointsOrOptions = {}, options = {}) {
+    let job, opts;
+    if (Array.isArray(jobOrNotes)) {
+      opts = options;
+      job = { notes: jobOrNotes, joints: jointsOrOptions, meter: opts.meter || [4, 4], bpm: opts.bpm || 60 };
+    } else { job = jobOrNotes; opts = jointsOrOptions || {}; }
+    const kind = opts.kind || 'trial', valving = kind === 'hand' || kind === 'machine';
+    if (kind === 'hand' && this._now() - this.endedAt < 600) return null;
+    this.stop();
+    const a = this.initialize();
+    const plan = WorkshopAudio.buildPlan(job, { ...opts, kind, countIn: opts.countIn === undefined ? (this.valved ? 2 : 4) : opts.countIn });
+    const t0 = (a ? a.currentTime : this._now() / 1000) + 0.12;
+    const r = { ...plan, job, perf: !a, t0, tb0: t0 + plan.countIn * plan.beat, end: t0 + (plan.countIn + plan.total) * plan.beat + 0.3,
+      holds: [], down: null, ctx0: a ? a.currentTime : 0, p0: this._now(), lastNow: null, lastAt: this._now(), correctionMs: Number(opts.correctionMs) || 0,
+      audioStarted: !!a && a.state === 'running', plan: plan.holds };
+    this.run = r;
+    if (valving) this.valved = true;
+    if (a) {
+      try {
+        for (const x of plan.ticks) this._tick(t0 + x.t, x.strong);
+        for (const x of plan.tones) {
+          this._pipeTone(x.midi, r.tb0 + x.t, x.len, x.attack, x.release);
+          this._drop(r.tb0 + x.t, x.attack === 'fresh');
+        }
+      } catch (error) { this._emit('onError', error); this._toPerformance(r); }
+    }
+    this._emit('onStart', r);
+    this.raf = this._raf(() => this._frame());
+    return r;
+  }
+
+  _toPerformance(r) {
+    this._stopValveSound(); this._silence();
+    const shift = this._now() / 1000 + 0.1 - r.t0;
+    r.perf = true; r.t0 += shift; r.tb0 += shift; r.end += shift;
+    r.holds = []; r.down = null;
+    this._notifyState();
+  }
+
+  _frame() {
+    const r = this.run;
+    if (!r) return;
+    if (!r.perf && this._now() - r.p0 > 1200 && this.ctx.currentTime === r.ctx0) this._toPerformance(r);
+    const now = this.clock(), beat = (now - r.tb0) / r.beat;
+    if (!r.perf) {
+      if (this.ctx.state === 'running') r.audioStarted = true;
+      if (now !== r.lastNow) { r.lastNow = now; r.lastAt = this._now(); }
+      else if (this.ctx.currentTime !== r.ctx0 && this._now() - r.lastAt > 800) { this.abort('sound'); return; }
+    }
+    const label = beat < 0 && r.countIn ? String(Math.min(r.countIn, Math.max(1, r.countIn - Math.ceil(-beat) + 1))) : '';
+    const pressed = r.kind === 'machine' ? r.plan.some(([a, b]) => beat >= a && beat < b) : r.down !== null;
+    this._emit('onFrame', { beat, total: r.total, kind: r.kind, countIn: r.countIn, label, holds: r.holds, down: r.down, pressed, fallback: r.perf, run: r });
+    if (now >= r.end) { this._finish(); return; }
+    this.raf = this._raf(() => this._frame());
+  }
+
+  _inputBeat(r) { return (this.clock() - r.correctionMs / 1000 - r.tb0) / r.beat; }
+
+  valveStart() {
+    const r = this.run;
+    if (!r || r.kind !== 'hand' || r.down !== null) return false;
+    const b = this._inputBeat(r);
+    if (b >= r.total) return false;
+    r.down = b;
+    if (this.ctx && !r.perf) this._startValveSound(r);
+    this._emit('onValve', { pressed: true, beat: b });
+    return true;
+  }
+
+  valveStop() {
+    const r = this.run;
+    if (!r || r.kind !== 'hand' || r.down === null) { this._stopValveSound(); return false; }
+    const b = this._inputBeat(r);
+    if (b > 0) r.holds.push([r.down, Math.min(b, r.total)]);
+    r.down = null;
+    this._stopValveSound();
+    this._emit('onValve', { pressed: false, beat: b });
+    return true;
+  }
+
+  _startValveSound(r) {
+    const job = r.job, st = starts(job).map(num), t = this.ctx.currentTime;
+    const when = Math.max(t, r.tb0), endT = r.tb0 + r.total * r.beat;
+    if (when >= endT) return;
+    const bs = (when - r.tb0) / r.beat;
+    let i0 = 0;
+    st.forEach((s, i) => { if (s <= bs + 1e-9) i0 = i; });
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain(), extras = [];
+    o.setPeriodicWave(this.wave);
+    o.frequency.setValueAtTime(hz(midiOf(job.notes[i0].p)), when);
+    for (let i = i0 + 1; i < st.length; i++) {
+      const T = r.tb0 + st[i] * r.beat;
+      o.frequency.setValueAtTime(hz(midiOf(job.notes[i].p)), T);
+      if (!samePitch(job.notes[i].p, job.notes[i - 1].p)) extras.push(this._drop(T, false));
+    }
+    g.gain.setValueAtTime(0.0001, when); g.gain.linearRampToValueAtTime(0.24, when + 0.018);
+    g.gain.setValueAtTime(0.24, Math.max(when + 0.018, endT - 0.04));
+    g.gain.linearRampToValueAtTime(0.0001, Math.max(when + 0.019, endT));
+    o.connect(g); g.connect(this.master); o.start(when); o.stop(Math.max(when + 0.02, endT + 0.06)); this._keep(o);
+    extras.push(this._drop(when, true));
+    this.valve = { o, g, extras };
+  }
+
+  _stopValveSound() {
+    if (!this.valve) return;
+    const t = this.ctx.currentTime, v = this.valve;
+    try { v.g.gain.cancelScheduledValues(t); v.g.gain.setTargetAtTime(0.0001, t, 0.012); v.o.stop(t + 0.09); } catch (_) { /* already ended */ }
+    v.extras.forEach((node) => { try { node.stop(); } catch (_) { /* already ended */ } });
+    this.valve = null;
+  }
+
+  _finish() {
+    const r = this.run;
+    if (!r) return;
+    if (r.kind === 'hand' && r.down !== null) { r.holds.push([r.down, r.total]); r.down = null; }
+    const result = { kind: r.kind, holds: r.kind === 'machine' ? r.plan : r.holds, judgment: r.kind === 'hand' ? judgeHold(r.holds, r.job) : null, machine: r.kind === 'machine', fallback: r.perf };
+    this.stop();
+    if (r.kind === 'hand' || r.kind === 'machine') this.endedAt = this._now();
+    this._emit('onFinish', result);
+  }
+
+  stop() {
+    if (this.raf) this._caf(this.raf);
+    this.raf = 0;
+    this._stopValveSound(); this._silence(); this.run = null;
+  }
+
+  abort(reason = 'sound') {
+    const hadRun = !!this.run;
+    this.stop();
+    if (hadRun) this._emit('onAbort', { reason, text: reason === 'hidden' || reason === 'blur' ? '화면을 떠나서 멈췄어요. 다시 시작해 주세요.' : '소리가 멈춰서 중단했어요. 소리를 켜고 다시 시작해 주세요.' });
+  }
+
+  resetDay() { this.valved = false; }
+
+  dispose() {
+    this.stop();
+    if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', this._visibility);
+    if (typeof window !== 'undefined') { window.removeEventListener('blur', this._blur); window.removeEventListener('pagehide', this._blur); }
+    if (this.ctx) this.ctx.removeEventListener('statechange', this._stateChange);
+  }
+}
+
+// ── 타이틀 · 작업일 지도 · 도면첩 · 설정 · 마감 · 자유 공방 ──
+const screenEscape = (value) => String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const screenDayRecord = (index) => save.days['d' + index] || {passed:false,stamp:0,runs:0,best:0};
+const screenDayOpen = (index) => index === 0 || !!screenDayRecord(index - 1).passed;
+const screenCardRecord = (tag) => save.cards[tag] || {got:false,valve:0};
+const screenCardCount = () => CARDS.filter(card => screenCardRecord(card.tag).got).length;
+const screenStamp = (stamp) => stamp === 2 ? '매끈 도장' : stamp === 1 ? '통과 도장' : '아직 도장이 없어요';
+const screenValve = (rank) => ['–','여러 곳 샘','한 곳 샘','매끈'][Number(rank)] || '–';
+const screenNav = (title, back = 'title', subtitle = '') => `<header class="screen-header"><button type="button" class="second back-button" onclick="openScreen('${back}')" aria-label="${back === 'title' ? '타이틀로' : '이전 화면으로'}">${icon('back')}<span>뒤로</span></button><div><h1>${screenEscape(title)}</h1>${subtitle ? `<p>${screenEscape(subtitle)}</p>` : ''}</div></header>`;
+function screenBrandArt() {
+  return `<svg class="brand-art" viewBox="0 0 400 210" aria-hidden="true"><defs><linearGradient id="brandPipe" x2="0" y2="1"><stop stop-color="#e9f0f4"/><stop offset="1" stop-color="#c3d3dc"/></linearGradient></defs><g fill="none" stroke="#b7c9d1" stroke-dasharray="2 6"><path d="M25 52H375M25 88H375M25 124H375M25 160H375"/></g><g fill="url(#brandPipe)" stroke="#59717d" stroke-width="2"><rect x="24" y="146" width="115" height="22" rx="11"/><rect x="126" y="86" width="22" height="82" rx="8"/><rect x="136" y="76" width="110" height="22" rx="11"/><rect x="233" y="76" width="22" height="62" rx="8"/><rect x="244" y="116" width="130" height="22" rx="11"/></g><g stroke="#2589ba" stroke-width="8" stroke-linecap="round" fill="none"><path d="M35 157H137V87H244V127H360"/></g><g fill="#f4dfb0" stroke="#87570d" stroke-width="2"><rect x="128" y="142" width="18" height="30" rx="3"/><rect x="231" y="72" width="26" height="18" rx="3"/><circle cx="44" cy="130" r="13"/><circle cx="159" cy="60" r="13"/><circle cx="277" cy="100" r="13"/></g><g fill="none" stroke="#87570d" stroke-width="2" stroke-linecap="round"><path d="M36 130q8-8 16 0M151 60q8-8 16 0M269 100q8-8 16 0"/></g><path d="M320 16C310 33 299 42 299 55a21 21 0 0 0 42 0c0-13-11-22-21-39Z" fill="#e7c478" stroke="#87570d" stroke-width="2"/><circle cx="313" cy="54" r="2" fill="#514327"/><circle cx="327" cy="54" r="2" fill="#514327"/><path d="M314 63q6 6 12 0" fill="none" stroke="#514327" stroke-width="2" stroke-linecap="round"/></svg>`;
+}
+function screenMiniature(card) {
+  const seed = DAYS.flatMap(day => day.jobs).find(job => job.id === card.first);
+  if (!seed) return '';
+  const job = makeJob(seed), total = num(totalBeats(job)), st = starts(job).map(num), X = beat => 12 + beat / total * 188, C = toCurves(job), y = p => 56 - stepOf(p) * 4;
+  let drawing = '<path d="M8 70H208" stroke="#c2d0d8" fill="none"/>';
+  job.notes.forEach((note,index) => { const x = X(st[index]); drawing += `<ellipse cx="${x + 5}" cy="${15 - stepOf(note.p)*1.8}" rx="3" ry="2.2" fill="currentColor"/><path d="M${x+7.5} ${14-stepOf(note.p)*1.8}v-11" stroke="currentColor"/>`; });
+  C.all.forEach(([a,b]) => { const x1=X(st[a])+5,x2=X(st[b])+5; drawing += `<path d="M${x1} 22Q${(x1+x2)/2} 35 ${x2} 22" fill="none" stroke="currentColor" stroke-width="1.2"/>`; });
+  sounds(job).forEach((sound,index) => { const start=num(sound.start),end=start+num(sound.len), yy=y(sound.p);drawing += `<rect x="${X(start)}" y="${yy}" width="${Math.max(3,X(end)-X(start)-3)}" height="9" rx="4" fill="#dce9ef" stroke="#567484"/><circle cx="${X(start)+5}" cy="${yy-6}" r="3.5" fill="#e6c783" stroke="#87570d"/>`; });
+  return `<svg class="book-miniature" viewBox="0 -8 220 88" aria-hidden="true">${drawing}</svg>`;
+}
+function screenTitle() {
+  const active = save.active, activeDay = active ? Number(active.day.slice(1)) : 0, canResume = active && Number.isInteger(activeDay) && DAYS[activeDay];
+  return `<section class="title-screen"><div class="title-kicker">음악을 잇는 작은 공방</div><h1>음표<br><span>파이프 공방</span></h1><p class="title-description">같은 곡선, 다른 소리.<br>물길을 놓으며 붙임줄과 이음줄을 배워요.</p>${screenBrandArt()}<div class="title-actions"><button type="button" class="primary" onclick="${canResume ? 'resumeWork()' : "openScreen('map')"}">${icon('play')}<span>${canResume ? '작업 이어 하기' : '작업 시작'}</span></button>${canResume ? `<p class="resume-caption">${activeDay}단 ${screenEscape(DAYS[activeDay].name)} · ${active.index+1}번째 의뢰</p>` : ''}<div class="title-subactions"><button type="button" class="second" onclick="openScreen('map')">${icon('map')}작업일 지도</button><button type="button" class="second" onclick="openScreen('book')">${icon('book')}도면첩 <small>${screenCardCount()}/8</small></button><button type="button" class="second" onclick="openScreen('free')">${icon('tool')}자유 공방</button><button type="button" class="second" onclick="openScreen('settings')">${icon('settings')}설정</button></div></div><p class="title-footnote">관은 비유예요. 곡선의 이름은 양 끝 음이 정해요.</p></section>`;
+}
+function screenMap() {
+  return `${screenNav('작업일 지도','title','하루씩, 새로운 연결을 배워요.')}<div class="day-list">${DAYS.map((day,index)=>{const rec=screenDayRecord(index), unlocked=screenDayOpen(index);return `<button type="button" class="day-tile ${unlocked?'':'locked'} ${rec.passed?'passed':''}" ${unlocked ? `onclick="startDay(${index})"` : 'disabled'}><span class="day-number">${unlocked ? index : icon('lock')}</span><span class="day-copy"><strong>${screenEscape(day.name)}</strong><span>${screenEscape(DAY_INFO[index].concept)}</span><small>${unlocked ? `${day.jobs.length}건 · 처음 맞힘 ${rec.best}/${day.jobs.length} · 통과 ${DAY_INFO[index].pass}건` : `${index-1}단을 통과하면 열려요`}</small></span><span class="day-stamp ${rec.stamp?'stamped':''}" aria-label="${screenStamp(rec.stamp)}">${rec.stamp === 2 ? icon('sparkle') : rec.stamp ? icon('check') : icon(unlocked?'arrow':'lock')}</span></button>`;}).join('')}</div><p class="screen-note">처음 나온 의뢰의 80%를 한 번에 맞히면 다음 작업일이 열려요. 밸브 솜씨는 따로 기록해요.</p>`;
+}
+function screenClose() {
+  const dayIndex = Number.isInteger(S.day) ? S.day : 0, day = DAYS[dayIndex], results=S.results || [], clean=results.slice(0,day.jobs.length).filter(result=>result && result.recipe==='full').length, passed=clean>=DAY_INFO[dayIndex].pass, smooth=results.filter((result,index)=>day.jobs[index] && day.jobs[index].ask!=='count').every(result=>result && result.valve==='매끈') && day.jobs.some(job=>job.ask!=='count');
+  return `${screenNav('오늘의 마감','map',dayIndex+'단 '+day.name)}<section class="close-summary ${passed?'pass':'practice'}"><div class="summary-seal">${icon(passed?'check':'tool')}</div><h2>${passed ? (smooth ? '매끈하게 마쳤어요' : '작업일을 통과했어요') : '한 번 더 해 볼까요?'}</h2><p>처음 맞힘 <strong>${clean}</strong> / ${day.jobs.length}건</p><p class="small">통과 기준 ${DAY_INFO[dayIndex].pass}건 · 밸브 솜씨는 통과에 영향을 주지 않아요.</p>${passed?`<span class="earned-stamp">${smooth?'매끈 도장':'통과 도장'}</span>`:''}</section>${Array.isArray(S.newCards) && S.newCards.length ? `<div class="new-cards"><strong>새로 모은 도면</strong><p>${S.newCards.map(tag=>{const card=CARDS.find(item=>item.tag===tag);return card?screenEscape(card.title):'';}).filter(Boolean).join(' · ')}</p></div>`:''}<ol class="result-list">${day.jobs.map((job,index)=>{const result=results[index];return `<li><span class="result-dot ${result?result.recipe:''}" aria-label="${result&&result.recipe==='full'?'처음 맞힘':'다시 고침'}"></span><strong>${index+1}${job.final?' 마감':''}</strong><span>${result&&result.recipe==='full'?'처음 맞힘':'다시 고침'}</span><small>${screenEscape(result?result.valve:'–')}</small></li>`;}).join('')}</ol><div class="screen-actions"><button type="button" class="second" onclick="startDay(${dayIndex})">다시 하기</button><button type="button" class="primary" onclick="${passed&&dayIndex<6?`startDay(${dayIndex+1})`:"openScreen('map')"}">${passed&&dayIndex<6?'다음 작업일':'지도로'}</button></div>`;
+}
+function screenBook() {
+  return `${screenNav('도면첩','title',screenCardCount()+' / 8장 · 배운 연결을 다시 들어요.')}<div class="book-grid">${CARDS.map(card=>{const record=screenCardRecord(card.tag);return `<button type="button" class="book-card ${record.got?'':'locked'}" ${record.got ? `onclick="openBookCard('${card.tag}')"`:'disabled'}><span class="book-card-top"><span class="book-card-symbol">${icon(record.got?'book':'lock')}</span><small>${record.got ? '모은 도면' : '아직 배우는 중'}</small></span><h2>${screenEscape(card.title)}</h2>${record.got?screenMiniature(card):'<div class="book-locked-mark" aria-hidden="true">⌒</div>'}<p>${record.got?screenEscape(card.text):'해당 연결을 한 번에 맞혀 납품하면 열려요.'}</p>${record.got?`<small class="book-valve">밸브 최고 · ${screenValve(record.valve)}</small>`:''}</button>`;}).join('')}</div><h2 class="section-title">발견한 장면</h2><div class="scene-list">${SCENES.map(scene=>{const seen=save.scenes.includes(scene.id);return `<button type="button" class="second scene-button" ${seen?`onclick="openScene('${scene.id}','book')"`:'disabled'}><span>${icon(seen?'play':'lock')}${screenEscape(scene.title)}</span><small>${seen?'가 · 나 비교':'작업일에서 만나요'}</small></button>`;}).join('')}</div><p class="screen-note">${screenEscape(CARD_BACK)}</p>`;
+}
+function screenTestSummary() {
+  const results=window.__tests;
+  if (!results) return '자가검사 준비 중';
+  if (Array.isArray(results)) return `자가검사 ${results.filter(item=>item.ok===true||item.pass===true||item.status==='PASS').length}/${results.length}`;
+  if (typeof results.passed==='number' && typeof results.total==='number') return `자가검사 ${results.passed}/${results.total}`;
+  if (Array.isArray(results.results)) return `자가검사 ${results.results.filter(item=>item.ok||item.pass).length}/${results.results.length}`;
+  return '자가검사 결과 보기';
+}
+function screenSettings() {
+  const settings=save.settings, storageFallback=store && (store.memoryOnly===true || store.persistent===false || store.available===false);
+  return `${screenNav('설정','title','이 기기에 저장되는 공방 설정이에요.')}<section class="settings-card"><h2>소리와 속도</h2><label class="setting-field range-field"><span>소리 크기</span><div><input type="range" min="0" max="1" step="0.05" value="${settings.volume}" aria-label="소리 크기" oninput="this.nextElementSibling.textContent=Math.round(this.value*100)+'%'" onchange="updateSetting('volume',Number(this.value))"><output>${Math.round(settings.volume*100)}%</output></div></label><label class="setting-field"><span>음소거<small>화면으로 계속 연습할 수 있어요.</small></span><input type="checkbox" ${settings.muted?'checked':''} onchange="updateSetting('muted',this.checked)"></label><label class="setting-field"><span>느리게<small>기본 ♩=60 → 느리게 ♩=50</small></span><input type="checkbox" ${settings.slow?'checked':''} onchange="updateSetting('slow',this.checked)"></label><button type="button" class="second sound-check" onclick="checkSound()">${icon('sound')}소리 확인하기</button></section><section class="settings-card"><h2>손과 화면</h2><label class="setting-field"><span>누름 보정<small>판정에 더할 시간, 밀리초(ms)</small></span><input type="number" min="-300" max="300" step="10" value="${settings.holdOffsetMs}" aria-label="누름 보정 밀리초" onchange="updateSetting('holdOffsetMs',Math.max(-300,Math.min(300,Number(this.value)||0)))"></label><label class="setting-field"><span>화면 움직임</span><select aria-label="화면 움직임" onchange="updateSetting('motion',this.value)"><option value="system" ${settings.motion==='system'?'selected':''}>기기 설정 따르기</option><option value="reduced" ${settings.motion==='reduced'?'selected':''}>움직임 줄이기</option><option value="full" ${settings.motion==='full'?'selected':''}>모두 보기</option></select></label><button type="button" class="second" onclick="updateSetting('tutorialSeen',false);startDay(0)">처음 안내 다시 해 보기</button></section><section class="settings-card"><h2>기록과 확인</h2>${storageFallback?'<p class="storage-warning">이 기기에서는 기록이 저장되지 않아요.</p>':'<p class="small">납품할 때마다 의뢰와 도면을 이 기기에 저장해요.</p>'}<button type="button" class="second" onclick="runTestsScreen()">${icon('check')}${screenTestSummary()}</button><button type="button" class="danger-button" onclick="resetProgress()">공방 기록 초기화</button></section>`;
+}
+function screenFree() {
+  const days = DAYS.map((day,index)=>({...day,index})).filter(day=>screenDayOpen(day.index));
+  return `${screenNav('자유 공방','title','배운 가락으로 원하는 물길을 놓아 보세요.')}<div class="free-intro">${icon('tool')}<p>정답을 정하지 않고 연결을 바꿔요.<br>시운전과 밸브 판정은 기록하지 않아요.</p></div><label class="free-tempo setting-field"><span>빠르기<small>♩=40–100</small></span><div class="free-range"><input id="freeBpm" type="range" min="40" max="100" step="5" value="${S.freeBpm||60}" aria-label="자유 공방 빠르기" oninput="this.nextElementSibling.textContent='♩='+this.value" onchange="setState({freeBpm:Number(this.value)})"><output>♩=${S.freeBpm||60}</output></div></label><div class="free-day-list">${days.map(day=>`<section><h2>${day.index}단 · ${screenEscape(day.name)}</h2><div class="free-melodies">${day.jobs.map((seed,index)=>{const job=makeJob(seed);return `<button type="button" class="free-melody" onclick="startFree('${seed.id}')"><strong>${index+1}</strong><span>${job.notes.map(note=>screenEscape(solfa(note.p))).join(' · ')}</span><small>${seed.meter} · ${beatsKo(totalBeats(job))}</small>${icon('arrow')}</button>`;}).join('')}</div></section>`).join('')}</div>`;
+}
+function renderScreen() {
+  const target=document.getElementById('screenContent');
+  if(!target) return '';
+  const renderers={title:screenTitle,map:screenMap,close:screenClose,book:screenBook,settings:screenSettings,free:screenFree};
+  const render=renderers[S.screen] || screenTitle;
+  const html=render();
+  target.innerHTML=html;
+  target.dataset.screen=S.screen;
+  return html;
+}
+
+/* AU checks use a deterministic AudioContext/AudioParam spy.
+ * They verify submitted events and lifecycle/clock code, not real PCM rendering,
+ * speaker audibility, physical touch latency, or Safari's device audio policy.
+ */
+function runAudioTests() {
+  const results = [];
+  const assert = (condition, message = 'Audio assertion failed') => { if (!condition) throw new Error(message); };
+  const near = (a, b) => Math.abs(a - b) < 1e-8;
+  const test = (id, fn) => {
+    try { results.push({ id, pass: true, detail: fn() || '모의 AudioContext 예약·상태 검증' }); }
+    catch (error) { results.push({ id, pass: false, error: error.message }); }
+  };
+  const sample = (joints = 'tss') => makeJob({ meter: '4/4', notes: 'C4/4 C4/4 D4/4 E4/4', joints });
+  function harness(extra = {}) {
+    const env = { now: 0, nodes: [], frames: [], finished: [], aborted: [], states: [], pending: null };
+    class Param {
+      constructor() { this.value = 0; this.log = []; }
+      setValueAtTime(value, time) { this.log.push({ kind: 'set', value, time }); }
+      linearRampToValueAtTime(value, time) { this.log.push({ kind: 'linear', value, time }); }
+      exponentialRampToValueAtTime(value, time) { this.log.push({ kind: 'exp', value, time }); }
+      cancelScheduledValues(time) { this.log.push({ kind: 'cancel', time }); }
+      setTargetAtTime(value, time, constant) { this.log.push({ kind: 'target', value, time, constant }); }
+    }
+    class Node {
+      constructor(kind) { this.kind = kind; this.gain = new Param(); this.frequency = new Param(); this.Q = {}; this.stops = []; this.listeners = {}; env.nodes.push(this); }
+      connect(target) { this.connected = target; return target; }
+      addEventListener(name, fn) { this.listeners[name] = fn; }
+      setPeriodicWave(wave) { this.wave = wave; }
+      start(time) { this.started = time; this.called = env.now; }
+      stop(time) { this.stops.push(time); }
+    }
+    class Context {
+      constructor() { this.state = extra.suspended ? 'suspended' : 'running'; this.currentTime = 0; this.sampleRate = 100; this.destination = {}; this.handlers = {}; this.outputLatency = 0.02; }
+      createGain() { return new Node('gain'); }
+      createOscillator() { return new Node('osc'); }
+      createBufferSource() { return new Node('noise'); }
+      createBiquadFilter() { return new Node('filter'); }
+      createPeriodicWave(real, imag) { return { real, imag }; }
+      createBuffer() { return { getChannelData: () => new Float32Array(100) }; }
+      addEventListener(name, fn) { this.handlers[name] = fn; }
+      removeEventListener(name) { delete this.handlers[name]; }
+      resume() { return null; } // Intentionally does not advance or unlock a clock.
+    }
+    const Factory = extra.unavailable ? class { constructor() { throw new Error('Simulated unavailable AudioContext'); } } : Context;
+    env.audio = new WorkshopAudio({ contextFactory: Factory, now: () => env.now, raf: fn => { env.pending = fn; return 1; }, cancelRaf: () => { env.pending = null; },
+      onFrame: frame => env.frames.push(frame), onFinish: result => env.finished.push(result), onAbort: reason => env.aborted.push(reason), onState: state => env.states.push(state) });
+    env.oscillators = () => env.nodes.filter(n => n.kind === 'osc');
+    return env;
+  }
+
+  test('AU-01', () => {
+    const env = harness();
+    try {
+      env.audio.play(sample());
+      const osc = env.oscillators(), times = [0.12, 2.12, 3.12], pitches = [60, 62, 64];
+      assert(osc.length === 3, 'Tied note must not create another oscillator');
+      osc.forEach((o, i) => { assert(near(o.started, times[i])); assert(near(o.frequency.log[0].value, hz(pitches[i]))); assert(o.called === 0, 'All tones must be submitted before the first frame'); });
+      assert(env.nodes.filter(n => n.kind === 'noise').length === 3, 'One unpitched drop per sound');
+      return '모의 예약: 0.12·2.12·3.12초 / 도·레·미. 첫 프레임 전에 모두 예약';
+    } finally { env.audio.dispose(); }
+  });
+
+  test('AU-02', () => {
+    const env = harness();
+    try {
+      env.audio.play(sample());
+      const old = [...env.audio.live];
+      env.audio.play(sample('ggg'));
+      assert(old.every(n => n.stops.includes(undefined)), 'Every old event must be cancelled before replacement');
+      const current = [...env.audio.live];
+      env.audio.stop();
+      assert(current.every(n => n.stops.includes(undefined)) && env.audio.live.size === 0);
+      return '모의 노드: 재생 교체·정지 때 이전 발진기와 예약 방울 전부 stop()';
+    } finally { env.audio.dispose(); }
+  });
+
+  test('AU-03', () => {
+    const cases = [];
+    for (const joint of ['t', 's', 'g']) {
+      const env = harness();
+      try {
+        const job = makeJob({ meter: '2/4', notes: 'C4/4 C4/4', joints: joint });
+        env.audio.play(job);
+        const osc = env.oscillators(), first = osc[0].connected.gain.log;
+        if (joint === 't') assert(osc.length === 1 && near(osc[0].stops[0], 2.18), 'Tie must be one sustained envelope');
+        if (joint === 's') assert(osc.length === 2 && first.some(e => e.kind === 'linear' && near(e.value, 0.0001) && near(e.time, 1.108)), 'Same-pitch slur must dip 12 ms before the new sound');
+        if (joint === 'g') assert(osc.length === 2 && first.some(e => e.kind === 'linear' && near(e.value, 0.0001) && near(e.time, 0.87)) && near(osc[1].started, 1.12), 'Gap must leave a quarter-beat without tone');
+        cases.push(joint);
+      } finally { env.audio.dispose(); }
+    }
+    assert(cases.length === 3);
+    return '모의 AudioParam: 붙임 단일 지속음·같은 음 이음 dip·뗌 ¼박 빈틈. 실제 파형·청취는 별도';
+  });
+
+  test('AU-04', () => {
+    const suspended = harness(), frozen = harness(), hidden = harness();
+    try {
+      suspended.audio.play(sample());
+      suspended.audio.ctx.state = 'suspended'; suspended.audio.ctx.handlers.statechange();
+      assert(suspended.audio.run === null && suspended.aborted[0]?.reason === 'sound');
+      assert(suspended.states.at(-1)?.enabled === false, 'Suspended context must expose disabled sound');
+      frozen.audio.play(sample());
+      frozen.audio.ctx.currentTime = 0.2; frozen.now = 200; frozen.audio._frame();
+      frozen.now = 1101; frozen.audio._frame();
+      assert(frozen.audio.run === null && frozen.aborted[0]?.reason === 'sound', 'A moving-then-frozen clock must abort after 800 ms');
+      hidden.audio.play(sample()); hidden.audio.abort('hidden');
+      assert(hidden.audio.run === null && hidden.audio.live.size === 0 && hidden.aborted[0]?.reason === 'hidden');
+      return '모의 statechange·800ms 시계 정지·화면 이탈 중단 경로. 실제 브라우저 visibility 전환은 화면 검증';
+    } finally { suspended.audio.dispose(); frozen.audio.dispose(); hidden.audio.dispose(); }
+  });
+
+  test('AU-05', () => {
+    const env = harness();
+    try {
+      env.audio.play(sample());
+      const r = env.audio.run;
+      env.audio.ctx.currentTime = r.tb0 + 1.5 * r.beat + env.audio.latency();
+      env.audio._frame();
+      assert(near(env.frames.at(-1).beat, 1.5));
+      env.audio.ctx.currentTime = r.tb0 + 2.25 * r.beat + env.audio.latency();
+      env.audio._frame();
+      assert(near(env.frames.at(-1).beat, 2.25));
+      return '출력 지연 20ms를 뺀 오디오 시각 → 물머리 콜백 1½박·2¼박';
+    } finally { env.audio.dispose(); }
+  });
+
+  test('AU-06', () => {
+    const env = harness();
+    try {
+      env.audio.play(sample(), { kind: 'hand' });
+      assert(env.oscillators().length === 0, 'Hand mode must not pre-play the answer');
+      env.audio.valveStart();
+      assert(env.oscillators().length === 1, 'One held oscillator');
+      const osc = env.oscillators()[0], frequencies = osc.frequency.log;
+      assert(frequencies.length === 4 && frequencies[0].value === frequencies[1].value);
+      assert(near(frequencies[2].time, env.audio.run.tb0 + 2));
+      assert(near(frequencies[3].time, env.audio.run.tb0 + 3));
+      const extras = [...env.audio.valve.extras];
+      env.audio.ctx.currentTime = env.audio.run.tb0 + 0.5;
+      env.audio.valveStop();
+      assert(env.audio.valve === null && extras.every(n => n.stops.includes(undefined)));
+      assert(osc.connected.gain.log.some(e => e.kind === 'cancel') && osc.connected.gain.log.some(e => e.kind === 'target' && e.constant === 0.012));
+      return '모의 손 밸브: 누름 발진기 하나·미래 주파수 선예약·뗌 때 게인과 방울 취소';
+    } finally { env.audio.dispose(); }
+  });
+
+  test('AU-07', () => {
+    const env = harness();
+    try {
+      env.audio.play(sample(), { kind: 'hand' }); assert(env.audio.run.countIn === 4);
+      env.audio.stop(); env.audio.play(sample(), { kind: 'machine' }); assert(env.audio.run.countIn === 2);
+      env.audio.stop(); env.audio.resetDay(); env.audio.play(sample(), { kind: 'machine' }); assert(env.audio.run.countIn === 4);
+      const p = WorkshopAudio.buildPlan(makeJob({ meter: '2/4', notes: 'C4/4 E4/4 E4/4 C4/4', joints: 'gtg' }), { kind: 'machine', countIn: 4 });
+      assert(p.ticks.length === 9);
+      assert(p.ticks.filter(t => t.strong).map(t => t.t).join(',') === '0,4,6,8');
+      return '준비 박 4→2·새 작업일 4 / 2박자 센박 0·4·6·8초 예약';
+    } finally { env.audio.dispose(); }
+  });
+
+  test('AU-08', () => {
+    const unavailable = harness({ unavailable: true }), blocked = harness({ suspended: true });
+    try {
+      unavailable.audio.play(sample()); assert(unavailable.audio.run.perf);
+      unavailable.now = 5000; unavailable.audio._frame(); assert(unavailable.finished.length === 1 && unavailable.finished[0].fallback);
+      blocked.audio.play(sample()); assert(!blocked.audio.run.perf);
+      blocked.now = 1300; blocked.audio._frame();
+      assert(blocked.audio.run.perf && blocked.audio.live.size === 0);
+      blocked.now = 7000; blocked.audio._frame(); assert(blocked.finished.length === 1 && blocked.finished[0].fallback);
+      return '모의 생성 거부·정지한 suspended 시계: 1.2초 뒤 화면 시계 전환·끝까지 진행';
+    } finally { unavailable.audio.dispose(); blocked.audio.dispose(); }
+  });
+
+  test('AU-09', () => {
+    const plan = WorkshopAudio.buildPlan(sample(), { bpm: 50 });
+    assert(plan.tones.length === 3);
+    [0, 2.4, 3.6].forEach((time, i) => assert(near(plan.tones[i].t, time)));
+    assert(near(plan.tones[0].len, 2.4) && near(plan.beat, 1.2));
+    return '♩=50 모의 예약표: 0·2.4·3.6초 / 붙인 소리 2.4초';
+  });
+  return results;
+}
+
+// 10 TESTS · exercise the real transition functions with isolated progress.
+// Browser-only rendering checks stay NOT_RUN when no real DOM is present.
+function runAppTests() {
+ const results=[],expect=(v,m)=>{if(!v)throw new Error(m||'assertion failed');};
+ const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+ const test=(id,name,fn)=>{try{const detail=fn();results.push({id,name,pass:true,detail:detail||''});}catch(e){results.push({id,name,pass:false,error:e.message});}};
+ const notRun=(id,name,reason)=>results.push({id,name,pass:null,status:'NOT_RUN',error:reason});
+ const original={save,S:JSON.parse(JSON.stringify(S)),render,focusMain,begin,persist,clearWater,stop:audioEngine.stop,checkSound};
+ const fixture=fn=>{
+  try{
+   save=defaultSave();save.settings.soundChecked=true;save.scenes=['S1','S2','S3','S4'];
+   render=()=>{};focusMain=()=>{};begin=()=>{};persist=()=>{};clearWater=()=>{};checkSound=()=>{};audioEngine.stop=()=>{};
+   setState({screen:'work',day:0,idx:0,phase:'count',sub:'ready',tool:'tie',joints:[],tries:0,assisted:false,bad:[],dead:[],picked:null,label:'',msg:{tone:'',text:''},valve:'',marks:null,hearing:false,results:[],retry:[],repeating:false,retryPos:0,free:false,freeSeed:null,scene:null,sceneSide:'a',sceneReturn:'work',sheet:'',lowOk:true,bpm:60});
+   return fn();
+  } finally {
+   save=original.save;Object.assign(S,original.S);render=original.render;focusMain=original.focusMain;begin=original.begin;persist=original.persist;clearWater=original.clearWater;audioEngine.stop=original.stop;checkSound=original.checkSound;
+  }
+ };
+ test('JD-07','종료 직후 재시작 보호와 떼기',()=>fixture(()=>{
+  const savedPlay=audioEngine.play,savedStart=audioEngine.valveStart,savedStop=audioEngine.valveStop;
+  try{
+   let starts=0,stops=0;
+   audioEngine.play=()=>null;audioEngine.valveStart=()=>{starts++;return false;};audioEngine.valveStop=()=>{stops++;return false;};
+   begin=original.begin;setState({day:1,phase:'valve',joints:truthNow().joints,sub:'result'});
+   valveDown();expect(!running(),'Rejected restart left the application in countin/run without a playback');
+   const before=S.sub;valveUp();expect(S.sub===before&&stops===1,'Release changed application phase');
+   expect(starts<=1,'Single press started multiple valve actions');
+  }finally{audioEngine.play=savedPlay;audioEngine.valveStart=savedStart;audioEngine.valveStop=savedStop;}
+ }));
+ test('JD-08','밸브 최고 솜씨 보존',()=>{
+  expect(bestValve('매끈','기계')==='매끈');expect(bestValve('한 곳 샘','여러 곳 샘')==='한 곳 샘');
+  expect(bestValve('기계','매끈')==='매끈');expect(bestValve('','기계')==='기계');
+ });
+ test('ST-01','허용하는 단계 전이',()=>fixture(()=>{
+  startJob(0);confirmCount();expect(S.phase==='count','Empty answer advanced');
+  pick(countAnswer(truthNow(),seedNow().q));confirmCount();expect(S.phase==='deliver','Correct count did not deliver');
+  nextJob();expect(S.idx===1&&S.phase==='count','Next count did not start');
+  setState({day:1,idx:0});startJob(0);setState({joints:truthNow().joints.slice()});inspectNow();expect(S.phase==='valve','Correct pipe did not open valve');
+  setState({sub:'run'});toDeliver();expect(S.phase==='valve','Running valve delivered');
+  setState({sub:'ready'});toDeliver();expect(S.phase==='deliver','Ready valve did not deliver');
+  save.cards.plain.got=true;openBookCard('plain');finishScene();expect(S.screen==='book'&&!save.scenes.includes('card'),'Book card polluted discovery scene records');
+ }));
+ test('ST-02','상태 변경 통로',()=>{
+  expect(/Object\.assign\(S,\s*patch\)/.test(setState.toString()),'setState no longer owns assignments');
+  const handlers=[startDay,startJob,pick,confirmCount,applyTool,inspectNow,toDeliver,nextJob,closeDay,openScene,finishScene,setSceneSide,startFree,openBookCard,openScreen];
+  expect(handlers.every(fn=>!(/S\.[A-Za-z_$][\w$]*\s*=(?!=)/.test(fn.toString()))),'A transition function assigns a state field directly');
+ });
+ test('ST-03','두 번째 오답 뒤 도움과 진행',()=>fixture(()=>{
+  startJob(0);const ans=countAnswer(truthNow(),seedNow().q),wrong=countChoices(truthNow(),seedNow().q).filter(k=>k!==ans);
+  pick(wrong[0]);confirmCount();expect(S.assisted&&S.tries===1&&S.dead.includes(wrong[0]),'First wrong answer was not removed');
+  pick(wrong[1]);confirmCount();expect(S.tries===2&&S.picked===ans,'Second wrong answer did not select the correct answer');
+  confirmCount();expect(S.phase==='deliver'&&S.results[0].recipe==='half','Assisted count was not recorded as half');
+  setState({day:1,idx:0,results:[]});startJob(0);inspectNow();inspectNow();expect(equal(S.joints,truthNow().joints)&&S.tries===2,'Second inspection did not repair joints');
+  inspectNow();toDeliver();expect(S.results[0].recipe==='half','Assisted pipe was not recorded as half');
+ }));
+ const browser=typeof HTMLElement!=='undefined'&&$('app') instanceof HTMLElement;
+ if(browser)test('ST-04','재생 중 초점과 잠금',()=>fixture(()=>{
+  render=original.render;focusMain=original.focusMain;
+  setState({day:1,idx:0,phase:'valve',joints:makeJob(DAYS[1].jobs[0]).joints,sub:'run'});
+  $('machine').focus();expect(document.activeElement===$('machine'),'Playback lock removed keyboard focus');
+  expect($('machine').getAttribute('aria-disabled')==='true'&&!$('machine').disabled,'Machine playback lock is not aria-disabled');
+  expect($('deliverBtn').getAttribute('aria-disabled')==='true'&&!$('deliverBtn').disabled,'Delivery playback lock is not aria-disabled');
+  setState({sub:'ready'});toDeliver();expect(document.activeElement===$('next'),'Delivery did not move focus to next request');
+ }));else notRun('ST-04','재생 중 초점과 잠금','Real browser DOM is required');
+ test('ST-05','이어하기와 재시도 순서 복원',()=>fixture(()=>{
+  save.days.d0.passed=true;
+  save.active={day:'d1',index:2,retry:[0,2],results:[{recipe:1,valve:0},{recipe:2,valve:3},{recipe:1,valve:0},{recipe:2,valve:0},{recipe:2,valve:0},{recipe:2,valve:0}],repeating:true,retryPos:1};
+  const restored=validateSave(save);expect(restored?.active?.repeating===true&&restored.active.retryPos===1,'Save validation dropped repeating/retryPos');
+  save=restored;startDay(1,true);expect(S.repeating&&S.retryPos===1&&equal(S.retry,[0,2]),'Retry queue or cursor was not restored');
+ }));
+ test('ST-06','도움 받은 의뢰의 한 번 재등장',()=>fixture(()=>{
+  const n=DAYS[0].jobs.length;setState({day:0,idx:n-2,phase:'deliver',results:Array.from({length:n-1},(_,i)=>({recipe:i===1?'half':'full',valve:'–'}))});
+  nextJob();expect(S.repeating&&S.idx===1&&equal(S.retry,[1]),'Assisted request was not inserted before final');
+  setState({assisted:false,phase:'count'});toDeliver();expect(S.results[1].recipe==='half','Retry result replaced the first-attempt score');
+  nextJob();expect(!S.repeating&&S.idx===n-1,'Retry did not return to final request exactly once');
+  setState({phase:'count',assisted:false});toDeliver();nextJob();expect(save.days.d0.best===5&&save.days.d0.passed,'Daily pass score included retry results or wrong threshold');
+ }));
+ if(browser)test('CT-01','그림과 엔진 출력 일치',()=>fixture(()=>{
+  render=original.render;
+  for(let d=0;d<DAYS.length;d++)for(let i=0;i<DAYS[d].jobs.length;i++){
+   setState({screen:'work',day:d,idx:i,phase:'deliver',sub:'ready',joints:makeJob(DAYS[d].jobs[i]).joints});
+   const job=truthNow(),curves=toCurves(job);
+   expect(document.querySelectorAll('#pipes .bell').length===bells(job),'Bell count differs: '+job.id);
+   expect(document.querySelectorAll('#score .curve').length===curves.all.length,'Curve count differs: '+job.id);
+   expect($('readoutText').textContent.includes(soundLine(job)),'Sound readout differs: '+job.id);
+   if(seedNow().ask==='count'){
+    setState({phase:'count'});
+    expect(equal(Array.from($('choices').children).map(b=>b.dataset.key),countChoices(job,seedNow().q)),'Count choices differ: '+job.id);
+   }
+  }
+ }));else notRun('CT-01','그림과 엔진 출력 일치','Real browser SVG/DOM is required');
+ test('CT-02','붙임줄 용어 잠금',()=>{
+  const copy=CARDS.map(c=>c.text).join(' ')+briefText.toString()+causeText.toString()+countText.toString();
+  expect(!copy.includes('같은 음이면 붙임줄'),'Forbidden shortcut phrase was introduced');
+  expect(CARDS.find(c=>c.tag==='tie').text.includes('같은 높이의 이웃한 두 음'),'Tie definition lost adjacency qualification');
+ });
+ notRun('CT-03','320px 문구 두 줄 이내','All 295 text variants require separate browser viewport measurements');
+ if(browser){try{original.render();}catch(_){/* Do not hide verification results if restoring a test screen. */}}
+ return results;
+}
+
+// Supplemental journey checks. Exercise actual game transitions, with all writes
+// confined to an isolated save and with audio/rendering replaced by no-op sinks.
+function runJourneyTests() {
+ const out=[],assert=(v,m)=>{if(!v)throw new Error(m||'assertion failed');},same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+ const test=(id,name,fn)=>{try{const detail=fn();out.push({id,name,pass:true,detail:detail||''});}catch(e){out.push({id,name,pass:false,error:e.message});}};
+ const beforeMemory=JSON.stringify(store.memory),beforeSave=save,beforeState=JSON.stringify(S);
+ const fixture=fn=>{
+  const original={save,state:JSON.parse(JSON.stringify(S)),render,focusMain,begin,persist,clearWater,checkSound,stop:audioEngine.stop,valved:audioEngine.valved,endedAt:audioEngine.endedAt,focused:typeof document!=='undefined'?document.activeElement:null};
+  try{
+   render=()=>{};focusMain=()=>{};begin=()=>{};persist=()=>{};clearWater=()=>{};checkSound=()=>{};audioEngine.stop=()=>{};
+   save=defaultSave();save.settings.soundChecked=true;
+   setState({screen:'title',day:0,idx:0,phase:'count',sub:'ready',tool:'tie',joints:[],tries:0,assisted:false,bad:[],dead:[],picked:null,label:'',msg:{tone:'',text:''},valve:'',marks:null,hearing:false,results:[],retry:[],repeating:false,retryPos:0,free:false,freeSeed:null,scene:null,sceneSide:'a',sceneReturn:'work',sheet:'',lowOk:true,bpm:60,soundUnavailable:false,currentResult:null});
+   return fn();
+  }finally{
+   save=original.save;for(const key of Object.keys(S))if(!(key in original.state))delete S[key];Object.assign(S,original.state);
+   render=original.render;focusMain=original.focusMain;begin=original.begin;persist=original.persist;clearWater=original.clearWater;checkSound=original.checkSound;audioEngine.stop=original.stop;audioEngine.valved=original.valved;audioEngine.endedAt=original.endedAt;
+   if(original.focused?.isConnected)original.focused.focus({preventScroll:true});
+  }
+ };
+ function finishDiscovery(log){
+  assert(!!S.scene,'No discovery is active');const id=S.scene.id,idx=S.idx,day=S.day;
+  if(log)log.push(id);
+  setSceneSide('b');assert(S.sceneSide==='b'&&seedNow().id===id+'b','Discovery comparison B did not open');
+  setSceneSide('a');assert(S.sceneSide==='a'&&seedNow().id===id+'a','Discovery comparison A did not reopen');
+  finishScene();assert(!S.scene&&S.idx===idx&&S.day===day,'Discovery consumed or changed the next request');
+  assert(save.scenes.includes(id),'Discovery was not marked seen');
+ }
+ function solveCurrent(help=false,valve='–'){
+  assert(!S.scene,'Finish discovery before solving request');const id=seedNow().id;
+  if(S.phase==='count'){
+   const job=truthNow(),seed=seedNow(),answer=countAnswer(job,seed.q);
+   if(help){const wrong=countChoices(job,seed.q).find(k=>k!==answer);pick(wrong);confirmCount();assert(S.assisted&&S.phase==='count','Wrong count skipped its help step');}
+   pick(answer);confirmCount();
+  }else{
+   assert(S.phase==='pipe','Unexpected request phase: '+S.phase);
+   const truth=truthNow();
+   if(help){inspectNow();assert(S.assisted,'Wrong pipe did not mark help');}
+   for(let k=0;k<truth.joints.length;k++){setState({tool:truth.joints[k]});applyTool(k);}
+   assert(same(mineNow().joints,truth.joints),'Tools did not construct target joints for '+id);
+   inspectNow();assert(S.phase==='valve','Pipe inspection did not open valve for '+id);
+   if(valve!=='–')setState({valve});toDeliver();
+  }
+  assert(S.phase==='deliver','Request did not reach delivery: '+id);
+  return id;
+ }
+ function finishDay(helpIndices=[],valve='–'){
+  let guard=0;const deliveries=[],retries=[],scenes=[];
+  while(S.screen==='work'&&guard++<100){
+   if(S.scene){finishDiscovery(scenes);continue;}
+   const retry=S.repeating,idx=S.idx;
+   const id=solveCurrent(!retry&&helpIndices.includes(idx),valve);deliveries.push(id);if(retry)retries.push(id);
+   nextJob();
+  }
+  assert(guard<100&&S.screen==='close','Day did not terminate');return{deliveries,retries,scenes};
+ }
+ test('JY-01','49개 의뢰와 발견 장면 4개 완주',()=>fixture(()=>{
+  const delivered=[],scenes=[];
+  for(let d=0;d<DAYS.length;d++){
+   startDay(d);assert(S.screen==='work'&&S.day===d,'Unlocked day did not start');
+   const run=finishDay();delivered.push(...run.deliveries);scenes.push(...run.scenes);
+   assert(run.retries.length===0,'First-pass run unexpectedly repeated requests');
+   assert(save.days['d'+d].passed&&save.days['d'+d].best===DAYS[d].jobs.length,'Clean day was not passed');
+   assert(S.results.length===DAYS[d].jobs.length&&S.results.every(r=>r.recipe==='full'),'First-pass results are incomplete');
+  }
+  assert(same(delivered,DAYS.flatMap(d=>d.jobs.map(s=>s.id))),'Actual delivery order differs from all 49 design seeds');
+  assert(same(scenes,['S1','S2','S3','S4']),'Discovery sequence differs');
+  assert(save.stats.jobs===49&&save.stats.clean===49,'First-pass statistics differ');
+  assert(SAVE_CARD_KEYS.every(k=>save.cards[k].got),'Clean progression did not award all eight cards');
+  assert(save.active===null,'Closed day left an active save');
+  return '49/49 deliveries, S1–S4, seven passes, eight cards';
+ }));
+ test('JY-02','80% 통과 기준과 다음 작업일 잠금',()=>fixture(()=>{
+  startDay(1);assert(S.screen==='title','Locked day opened before previous pass');
+  startDay(0);const fail=finishDay([0,1]);assert(!save.days.d0.passed&&save.days.d0.best===4,'Four of six incorrectly passed');
+  assert(fail.retries.length===2,'Two assisted requests did not repeat once each');
+  startDay(1);assert(S.screen==='close'&&S.day===0,'Failed previous day unlocked next day');
+  startDay(0);const pass=finishDay([0]);assert(save.days.d0.passed&&save.days.d0.best===5,'Five of six did not meet the threshold');
+  assert(pass.retries.length===1,'One assisted request repeated incorrectly');
+  startDay(1);assert(S.screen==='work'&&S.day===1,'Passing previous day did not unlock next day');
+ }));
+ test('JY-03','재의뢰 순서와 첫 결과 보존',()=>fixture(()=>{
+  startDay(0);const run=finishDay([1,3]);
+  assert(same(run.deliveries,['d0-01','d0-02','d0-03','d0-04','d0-05','d0-02','d0-04','d0-06']),'Assisted requests were not inserted before final in original order');
+  assert(same(run.retries,['d0-02','d0-04']),'Retry queue was not consumed once');
+  assert(S.results[1].recipe==='half'&&S.results[3].recipe==='half','Retry overwrote first-attempt records');
+  assert(save.days.d0.best===4&&!save.days.d0.passed,'Retries inflated daily pass score');
+  assert(save.stats.jobs===6&&save.stats.clean===4,'Retry deliveries inflated first-attempt statistics');
+ }));
+ test('JY-04','도움받은 카드의 재의뢰 획득',()=>fixture(()=>{
+  save.days.d0.passed=true;save.scenes=['S1','S2','S3','S4'];startDay(1);
+  const first=solveCurrent(true);assert(first==='d1-01'&&!save.cards.tie.got,'Half result incorrectly awarded a card');nextJob();
+  let guard=0,gotOnRetry=false;
+  while(S.screen==='work'&&guard++<30){
+   if(S.scene){finishDiscovery();continue;}
+   const id=seedNow().id,retry=S.repeating;if(retry&&id==='d1-01')assert(!save.cards.tie.got,'A helped original request awarded the tie card before retry');solveCurrent(!retry);
+   if(retry&&id==='d1-01'){gotOnRetry=save.cards.tie.got;assert(S.results[0].recipe==='half','Card retry overwrote original half result');}
+   nextJob();
+  }
+  assert(guard<30&&gotOnRetry,'Correct retry did not award its connection card');
+ }));
+ test('JY-05','기계 밸브와 매끈 카드 기록 구분',()=>fixture(()=>{
+  save.days.d0.passed=true;save.scenes=['S1','S2','S3','S4'];startDay(1);solveCurrent(false,'기계');
+  assert(save.cards.tie.got&&save.cards.tie.valve===0,'Machine valve earned a smooth card badge');
+  startJob(0);solveCurrent(false,'매끈');assert(save.cards.tie.valve===3,'Manual smooth result did not upgrade card skill');
+  startJob(0);solveCurrent(false,'기계');assert(save.cards.tie.valve===3,'Later machine play erased manual best');
+ }));
+ test('JY-06','음소거·소리 불가의 설계도 대체',()=>fixture(()=>{
+  const soundJobs=[];
+  for(let d=0;d<DAYS.length;d++)for(let i=0;i<DAYS[d].jobs.length;i++)if(DAYS[d].jobs[i].ask==='sound')soundJobs.push([d,i]);
+  assert(soundJobs.length===3,'Sound-job seed count changed');
+  for(const[d,i]of soundJobs){
+   setState({screen:'work',day:d,idx:i,scene:null,free:false,soundUnavailable:false});save.settings.muted=false;
+   const truth=makeJob(rawSeedNow());assert(seedNow().ask==='sound','Sound request disappeared while sound was available');
+   save.settings.muted=true;assert(seedNow().ask==='score'&&seedNow().soundFallback,'Muted sound request did not become readable score');
+   assert(same(makeJob(seedNow()),truth),'Muted fallback changed theory seed');
+   save.settings.muted=false;setState({soundUnavailable:true});assert(seedNow().ask==='score'&&seedNow().soundFallback,'Unavailable audio did not reveal readable score');
+   setState({soundUnavailable:false});assert(seedNow().ask==='sound','Recovered audio did not restore sound request');
+  }
+  return 'd3-02, d3-05, d5-06 retain identical notes and joints';
+ }));
+ test('JY-07','도면 카드 8장의 열기와 복귀',()=>fixture(()=>{
+  for(const tag of SAVE_CARD_KEYS)save.cards[tag].got=true;
+  for(const card of CARDS){openBookCard(card.tag);assert(S.scene?.id==='card'&&S.scene.title===card.title,'Book card did not open: '+card.tag);finishScene();assert(S.screen==='book'&&!S.scene,'Book card did not return to collection');assert(!save.scenes.includes('card')&&validateSave(save)!==null,'Book card corrupted scene storage');}
+ }));
+ test('JY-08','검사 전후 실제 기록 보존',()=>{
+  assert(save===beforeSave&&JSON.stringify(S)===beforeState,'Journey fixture changed the live application state');
+  assert(JSON.stringify(store.memory)===beforeMemory,'Journey fixture changed the real storage memory');
+  return 'No persistent writes; original save and state restored';
+ });
+ return out;
+}
+
+// QA uses a fresh iframe save and never writes learner progress.
+function testResultsMarkup(){const list=window.__tests||[],passed=list.filter(x=>x.pass).length;return `${screenNav('공방 자가검사','settings')}<p class="intro">${passed}/${list.length} 통과 · ${list.filter(x=>x.pass===false).length} 실패 · ${list.filter(x=>x.pass===null).length} 미실행</p><p class="small">소리는 모의 AudioContext로 예약·취소를 검증해요. 실제 휴대폰 청취와 강사 검수는 별도예요.</p><table class="test-table"><thead><tr><th>번호</th><th>결과</th><th>확인</th></tr></thead><tbody>${list.map(t=>`<tr><td>${t.id}</td><td class="${t.pass?'pass':'fail'}">${t.pass?'PASS':t.pass===null?'NOT_RUN':'FAIL'}</td><td>${screenEscape(t.error||t.detail||t.name||'')}</td></tr>`).join('')}</tbody></table><h2 class="section-title">전체 진행 검사</h2><p>${(window.__journeyTests||[]).filter(t=>t.pass).length}/8 통과 · 의뢰 49개, 발견 장면 4개, 작업일 7개, 도면 8장</p><h2 class="section-title">화면 크기별 검사</h2><div id="layoutResult">검사 중…</div><p class="small">실기기 청취, 터치 지연, VoiceOver·TalkBack 및 강사 검수: NOT_RUN</p>`;}
+function runTestsScreen(){
+ audioEngine.stop();
+ window.__tests=[...runEngineTests(DAYS),...runStorageTests(),...runAudioTests(),...runAppTests()];window.__journeyTests=runJourneyTests();
+ setState({screen:'tests'});$('app').hidden=true;$('screen').hidden=false;$('screenContent').innerHTML=testResultsMarkup();
+ runLayoutSuite();
+}
+function runLayoutFrame(){
+ audioEngine.stop();save=defaultSave();save.settings.soundChecked=true;save.scenes=SCENES.map(s=>s.id);for(const d of DAYS)save.days[d.id].passed=true;persist=()=>{};audioEngine.play=()=>null;focusMain=()=>{};
+ let scenes=0,failures=[],maxLines=0,align=0,curves=0;
+ const measure=(el)=>{const css=getComputedStyle(el),line=parseFloat(css.lineHeight);return Math.ceil((el.scrollHeight-.5)/line);};
+ const checkText=(id,text)=>{const el=$(id);el.textContent=text;const lines=measure(el);maxLines=Math.max(maxLines,lines);if(lines>2)failures.push({type:'text',id,text,lines});};
+ const originalRender=render;
+ for(let d=0;d<DAYS.length;d++)for(let i=0;i<DAYS[d].jobs.length;i++){
+  const seed={...DAYS[d].jobs[i],tools:DAYS[d].tools},job=makeJob(seed);
+  for(const phase of seed.ask==='count'?['count','deliver']:['pipe','valve','deliver']){
+   setState({screen:'work',day:d,idx:i,phase,free:false,scene:null,sub:'ready',joints:job.joints,results:[],currentResult:null,lowOk:true,msg:{tone:'',text:''},bad:[],marks:null,picked:null,dead:[]});scenes++;
+   const app=$('app').getBoundingClientRect(),stage=$('stage').getBoundingClientRect(),pipe=$('pipesWrap').getBoundingClientRect();
+   if(document.documentElement.scrollWidth>innerWidth||document.body.scrollHeight>innerHeight||pipe.bottom>stage.bottom+.5||pipe.top<stage.top-.5)failures.push({type:'overflow',id:seed.id,phase,appH:app.height,bodyH:document.body.scrollHeight,pipeBottom:pipe.bottom,stageBottom:stage.bottom});
+   const bell=document.querySelector('#pipes .bell .b'),head=document.querySelector('#score .head');if(bell&&head){const diff=Math.abs(+bell.getAttribute('cx')-+head.getAttribute('cx'));align=Math.max(align,diff);}
+   const cs=[...document.querySelectorAll('#score .curve')].map(n=>getComputedStyle(n).stroke+'|'+getComputedStyle(n).strokeWidth);if(new Set(cs).size>1)failures.push({type:'curves',id:seed.id});curves+=cs.length;
+   for(const button of $('app').querySelectorAll('button')){const rect=button.getBoundingClientRect();if(rect.width&&rect.height&&(rect.height<43.5||button.classList.contains('joint')&&rect.width<35.5))failures.push({type:'touchTarget',id:button.id||button.className,w:rect.width,h:rect.height});}
+   checkText('briefText',briefText(seed,job));checkText('readoutText',$('readoutText').textContent);
+  }
+  if(seed.ask!=='count'){
+   setState({day:d,idx:i,phase:'pipe',joints:job.joints});
+   for(const k of job.joints.keys())for(const got of ['gap','slur','tie'])if(got!==job.joints[k]&&(got!=='tie'||canTie(job,k))){const wrong=inspect({...job,joints:job.joints.map((v,n)=>n===k?got:v)},job.joints);if(wrong.length)checkText('readoutText',causeText(firstCause(wrong),seed,job));}
+   checkText('readoutText','정답대로 고쳐 두었어요. 물을 틀어 보고 검수를 눌러요.');
+  }else{setState({day:d,idx:i,phase:'count',joints:job.joints});for(const choice of countChoices(job,seed.q))if(choice!==countAnswer(job,seed.q))checkText('readoutText',countText(job,seed.q,choice));}
+ }
+ const result={viewport:`${innerWidth}x${innerHeight}`,scenes,failures:failures.slice(0,30),totalFailures:failures.length,maxLines,alignmentPx:align,curves};
+ parent.postMessage({type:'joint-layout-result',result},location.origin);
+}
+function runLayoutSuite(){
+ const sizes=[[320,545],[320,568],[360,600],[360,640],[390,664],[390,844],[430,932],[800,600]],results=[];
+ let frame=null;const makeFrame=()=>{if(frame)frame.remove();frame=document.createElement('iframe');frame.title='독립 화면 검사';frame.style.cssText='position:fixed;left:-12000px;top:0;border:0;visibility:hidden';document.body.append(frame);};
+ const next=()=>{if(!sizes.length){frame.remove();window.removeEventListener('message',onMessage);window.__layoutTests=results;const failed=results.flatMap(r=>r.failures);const ct=window.__tests.find(x=>x.id==='CT-03');if(ct){ct.pass=!failed.some(f=>f.type==='text');ct.status=ct.pass?'PASS':'FAIL';ct.error=ct.pass?'':JSON.stringify(failed.filter(f=>f.type==='text').slice(0,3));ct.detail=`${results.reduce((s,r)=>s+r.scenes,0)}장면 및 원인 문구 · 최대 ${Math.max(...results.map(r=>r.maxLines))}줄`;}if(S.screen==='tests'){$('screenContent').innerHTML=testResultsMarkup();$('layoutResult').textContent=results.map(r=>`${r.viewport}: ${r.scenes}장면 · ${r.totalFailures}건 문제 · 정렬 차 ${r.alignmentPx}px`).join(' / ');}return;}const [w,h]=sizes.shift();makeFrame();frame.width=w;frame.height=h;frame.src=location.pathname+'#layout-only';};
+ const onMessage=e=>{if(e.source===frame.contentWindow&&e.data?.type==='joint-layout-result'){results.push(e.data.result);next();}};
+ window.addEventListener('message',onMessage);next();
+}
+
+// 4 STATE · explicit transitions, 8 STORAGE, 9 SCREENS, 11 BOOT
+const $ = id => document.getElementById(id);
+const store = new WorkshopStorage();
+let save = store.load();
+const S = {screen:'title',day:0,idx:0,phase:'count',sub:'ready',tool:'tie',joints:[],tries:0,assisted:false,bad:[],dead:[],picked:null,label:'',msg:{tone:'',text:''},valve:'',marks:null,hearing:false,results:[],retry:[],repeating:false,retryPos:0,free:false,freeSeed:null,scene:null,sceneSide:'a',sceneReturn:'work',sheet:'',lowOk:false,bpm:60};
+function setState(patch){Object.assign(S,patch);render();}
+const dayNow=()=>DAYS[S.day];
+const seedsNow=()=>dayNow().jobs.map(s=>({...s,tools:dayNow().tools}));
+const rawSeedNow=()=>S.scene?{...S.scene[S.sceneSide],id:S.scene.id+S.sceneSide,ask:'score',tools:''}:S.free?{...S.freeSeed,ask:'score',tools:'gst'}:seedsNow()[S.idx];
+const seedNow=()=>{const seed=rawSeedNow();return seed.ask==='sound'&&(save.settings.muted||S.soundUnavailable)?{...seed,ask:'score',soundFallback:true}:seed;};
+const truthNow=()=>makeJob(seedNow());
+const mineNow=()=>({...truthNow(),joints:S.joints});
+const shownJob=()=>S.scene?truthNow():(S.phase==='pipe'||S.phase==='valve')?mineNow():truthNow();
+const running=()=>['run','listen','countin'].includes(S.sub);
+const bestValve=(a,b)=>(RANK[b]||0)>(RANK[a]||0)?b:a;
+const valveNumber=v=>({'–':0,'기계':4,'여러 곳 샘':1,'한 곳 샘':2,'매끈':3}[v]||0);
+const valveName=n=>['–','여러 곳 샘','한 곳 샘','매끈','기계'][n]||'–';
+function persist(){store.save(save);}
+function saveActive(){if(S.free||S.scene)return;save.active={day:dayNow().id,index:S.idx,retry:S.retry.slice(),phase:S.phase,results:S.results.filter(Boolean).map(r=>({recipe:r.recipe==='full'?2:1,valve:valveNumber(r.valve)})),repeating:S.repeating,retryPos:S.retryPos};persist();}
+function idle(){audioEngine.stop();setState({sub:'ready',hearing:false,label:''});clearWater();}
+function openScreen(screen){audioEngine.stop();setState({screen,free:false,scene:null,sub:'ready',sheet:''});$('screenContent')?.focus({preventScroll:true});}
+function resumeWork(){if(save.active){const d=DAYS.findIndex(d=>d.id===save.active.day);startDay(Math.max(0,d),true);}else openScreen('map');}
+function startDay(day,resume=false){
+ if(day<0||day>=DAYS.length||(day>0&&!save.days['d'+(day-1)].passed))return;
+ audioEngine.stop();audioEngine.resetDay?.();
+ const active=resume&&save.active?.day===DAYS[day].id?save.active:null;
+ setState({screen:'work',day,idx:active?.index||0,newCards:[],results:active?active.results.map(r=>({recipe:r.recipe===2?'full':'half',valve:valveName(r.valve)})):[],retry:active?.retry||[],repeating:!!active?.repeating,retryPos:active?.retryPos||0,free:false,scene:null});
+ startJob(S.idx);
+ if(active?.phase==='deliver')setState({phase:'deliver',valve:valveName(active.results[S.idx]?.valve),assisted:active.results[S.idx]?.recipe===1});
+ if(day===0&&!save.settings.soundChecked)checkSound();
+}
+function startJob(i,skipScene=false){
+ audioEngine.stop();
+ const seed=seedsNow()[i],job=makeJob(seed),tools=seed.tools||'';
+ setState({idx:i,scene:null,phase:seed.ask==='count'?'count':'pipe',sub:'ready',joints:seed.ask==='repair'?parseJoints(seed.given,job.notes.length):Array(job.notes.length-1).fill('gap'),tries:0,assisted:false,bad:[],dead:[],picked:null,label:'',valve:'',tutorialStep:0,machineShown:false,currentResult:null,marks:null,hearing:false,tool:tools.includes(TOOL_CODE[S.tool])?S.tool:JOINT[tools.at(-1)]||'tie',msg:{tone:'',text:''}});
+ saveActive();
+ const scene=SCENES.find(x=>x.before===seed.id&&!save.scenes.includes(x.id));
+ if(scene&&!skipScene)openScene(scene.id,'work');else focusMain();
+}
+function pick(key){if(S.phase==='count'&&!S.dead.includes(key))setState({picked:key,msg:{tone:'',text:''}});}
+function confirmCount(){
+ if(S.phase!=='count')return;
+ const seed=seedNow(),job=truthNow(),ans=countAnswer(job,seed.q);
+ if(S.picked===null){setState({msg:{tone:'warn',text:'보기에서 하나를 먼저 골라 주세요.'}});return;}
+ if(S.picked===ans){toDeliver();return;}
+ if(S.tries===0)setState({tries:1,assisted:true,dead:S.dead.concat(S.picked),picked:null,msg:{tone:'bad',text:countText(job,seed.q,S.picked)}});
+ else setState({tries:2,assisted:true,dead:countChoices(job,seed.q).filter(c=>c!==ans),picked:ans,msg:{tone:'warn',text:`답은 ${countLabel(seed.q,ans)}이에요. 확정을 눌러요.`}});
+}
+function applyTool(k){
+ if(S.phase!=='pipe'||S.scene)return;
+ const hearing=S.hearing;
+ if(!hearing)audioEngine.stop();
+ const r=withJoint(mineNow(),k,S.tool);
+ if(!r.ok){setState({sub:hearing?S.sub:'ready',msg:{tone:'bad',text:'높이가 달라서 붙일 수 없어요. 붙임줄은 같은 높이끼리만 돼요.'}});const b=document.querySelector(`.joint[data-k="${k}"]`);b?.classList.add('shake');return;}
+ setState({sub:hearing?S.sub:'ready',joints:r.job.joints,bad:S.bad.filter(x=>x!==k),msg:{tone:'',text:''}});
+ if(S.free&&ambiguous(mineNow()).length)setState({msg:{tone:'warn',text:'이 곡선은 악보에서 붙임줄로 읽혀요.'}});
+}
+function inspectNow(){
+ if(S.phase!=='pipe'||S.scene)return;
+ idle();
+ if(S.free){setState({phase:'valve',msg:{tone:'',text:'내 물길에 맞춰 밸브를 눌러 봐요.'}});focusMain();return;}
+ const wrong=inspect(mineNow(),truthNow().joints);
+ if(!wrong.length){setState({phase:'valve',sub:'ready',bad:[],msg:{tone:'good',text:'설계도와 같아요. 이제 밸브를 눌러 손으로 물을 틀어요.'}});focusMain();if(seedNow().id==='d1-01'&&!save.settings.tutorialSeen&&!S.machineShown){setState({machineShown:true});begin('machine');}return;}
+ if(S.tries===0)setState({tries:1,assisted:true,bad:wrong.map(x=>x.k),msg:{tone:'bad',text:causeText(firstCause(wrong),seedNow(),truthNow())}});
+ else setState({tries:2,assisted:true,joints:truthNow().joints.slice(),bad:[],msg:{tone:'warn',text:'정답대로 고쳐 두었어요. 물을 틀어 보고 검수를 눌러요.'}});
+}
+function toDeliver(){
+ if(S.phase==='valve'&&running())return;
+ audioEngine.stop();
+ if(S.free){setState({phase:'pipe',sub:'ready',marks:null,msg:{tone:'',text:''}});return;}
+ const result={recipe:S.assisted?'half':'full',valve:S.valve||'–'},results=S.results.slice();
+ if(!S.repeating)results[S.idx]=result;
+ const newCards=(S.newCards||[]).slice();if(result.recipe==='full')for(const tag of tagsOf(truthNow())){if(!save.cards[tag]?.got&&!newCards.includes(tag))newCards.push(tag);save.cards[tag]??={got:false,valve:0};save.cards[tag]={got:true,valve:Math.max(save.cards[tag].valve||0,result.valve==='기계'?0:Math.min(3,valveNumber(result.valve)))};}
+ if(!S.repeating){save.stats.jobs++;if(result.recipe==='full')save.stats.clean++;if(S.valve){save.stats.valves++;if(S.valve==='매끈')save.stats.smooth++;}}
+ setState({phase:'deliver',sub:'ready',bad:[],marks:null,label:'',results,newCards,currentResult:result,msg:{tone:'',text:''}});
+ if(seedNow().id==='d3-01')save.settings.tutorialSeen=true;saveActive();begin('listen');focusMain();
+}
+function nextJob(){
+ if(S.phase!=='deliver')return;
+ audioEngine.stop();
+ const last=dayNow().jobs.length-1;
+ let idx=S.idx+1;
+ if(S.repeating){const pos=S.retryPos+1;if(pos<S.retry.length){setState({retryPos:pos});idx=S.retry[pos];}else{setState({repeating:false,retryPos:0});idx=last;}}
+ else if(S.idx===last){closeDay();return;}
+ else if(idx===last){const retry=S.results.map((r,i)=>r?.recipe==='half'&&i<last?i:-1).filter(i=>i>=0);if(retry.length){setState({retry,repeating:true,retryPos:0});idx=retry[0];}}
+ const scene=SCENES.find(x=>x.after===seedNow().id&&!save.scenes.includes(x.id));
+ startJob(idx);
+ if(scene)openScene(scene.id,'work');
+}
+function closeDay(){
+ const full=S.results.filter(r=>r?.recipe==='full').length,passed=full>=Math.ceil(dayNow().jobs.length*.8),old=save.days[dayNow().id];
+ const manual=dayNow().jobs.map((s,i)=>s.ask!=='count'?S.results[i]:null).filter(Boolean),smooth=manual.length>0&&manual.every(r=>r.valve==='매끈');
+ save.days[dayNow().id]={passed:old.passed||passed,stamp:Math.max(old.stamp,passed?(smooth?2:1):0),runs:old.runs+1,best:Math.max(old.best,full)};save.active=null;persist();setState({screen:'close',sub:'ready'});
+}
+function openScene(id,returnTo='work'){
+ const scene=SCENES.find(s=>s.id===id);if(!scene)return;
+ audioEngine.stop();setState({screen:'work',scene,sceneSide:'a',sceneReturn:returnTo,phase:'scene',sub:'ready',msg:{tone:'',text:scene.text}});
+}
+function finishScene(){const id=S.scene.id,ret=S.sceneReturn;if(SCENES.some(x=>x.id===id)&&!save.scenes.includes(id)){save.scenes.push(id);persist();}if(ret==='work'){setState({scene:null});startJob(S.idx,true);}else openScreen(ret);}
+function setSceneSide(side){audioEngine.stop();setState({sceneSide:side,sub:'ready'});}
+function startFree(seedId){
+ const seed=DAYS.flatMap((d,i)=>(i===0||save.days['d'+(i-1)].passed)?d.jobs:[]).find(s=>s.id===seedId);if(!seed)return;
+ audioEngine.stop();const job=makeJob(seed);setState({screen:'work',free:true,freeSeed:seed,scene:null,phase:'pipe',sub:'ready',joints:job.joints.slice(),tool:'slur',bad:[],marks:null,msg:{tone:'',text:''},valve:'',bpm:60});focusMain();
+}
+function openBookCard(tag){
+ const c=CARDS.find(c=>c.tag===tag);if(!c||!save.cards[tag]?.got)return;
+ const seed=DAYS.flatMap(d=>d.jobs).find(s=>s.id===c.first);
+ setState({screen:'work',scene:{id:'card',title:c.title,text:c.title,a:seed,b:seed,card:c},sceneSide:'a',sceneReturn:'book',phase:'scene',sub:'ready',msg:{tone:'',text:c.text}});
+}
+function updateSetting(key,value){
+ save.settings[key]=value;persist();audioEngine.setVolume(save.settings.muted?0:save.settings.volume);applyMotion();if(S.screen==='settings')renderScreen();
+}
+function resetProgress(confirmed=false){if(!confirmed){showModal('<h2>기록을 초기화할까요?</h2><p>작업일·도면 카드·설정이 처음으로 돌아가요.</p><button onclick="resetProgress(true)">기록 초기화</button><button onclick="closeModal()">돌아가기</button>');return;}save=store.reset();closeModal();openScreen('title');}
+function replayTutorial(){save.settings.tutorialSeen=false;save.settings.soundChecked=false;persist();startDay(0);}
+function checkSound(){audioEngine.initialize();audioEngine.play(makeJob({notes:'C4/4',meter:'1/4',joints:''}),{kind:'hear',bpm:60});showModal('<div class="eyebrow">공방의 소리를 확인해요</div><h2>관 소리가 들리나요?</h2><p>방울은 소리가 시작되는 자리를 알려 줘요.</p><button onclick="soundChecked(true)">들려요</button><button onclick="soundChecked(false)">안 들려요 · 소리 없이</button>');}
+function soundChecked(heard){audioEngine.stop();save.settings.soundChecked=true;save.settings.muted=!heard;persist();audioEngine.setVolume(heard?save.settings.volume:0);closeModal();}
+function showModal(html){$('overlayContent').innerHTML=html;$('overlay').hidden=false;$('app').inert=true;$('screen').inert=true;$('overlayContent').querySelector('button,input')?.focus();}
+function closeModal(){$('overlay').hidden=true;$('app').inert=false;$('screen').inert=false;focusMain();}
+function applyMotion(){document.body.classList.toggle('reduced',save.settings.motion==='reduced'||save.settings.motion==='system'&&matchMedia('(prefers-reduced-motion:reduce)').matches);}
+let scoreKey='',pipesKey='',choiceKey='',lastScreen='';
+function render(){
+ document.body.classList.toggle('short',innerHeight<620);document.body.classList.toggle('low',innerHeight<545&&S.lowOk);const work=S.screen==='work';$('app').hidden=!work;$('screen').hidden=work;
+ if(!work){if(S.screen==='tests'){$('screenContent').innerHTML=testResultsMarkup();if(window.__layoutTests)$('layoutResult').textContent=window.__layoutTests.map(r=>`${r.viewport}: ${r.scenes}장면 · ${r.totalFailures}건 문제`).join(' / ');}else renderScreen();lastScreen=S.screen;return;}
+ const seed=seedNow(),truth=truthNow(),count=S.phase==='count',pipe=S.phase==='pipe',valve=S.phase==='valve',deliver=S.phase==='deliver',scene=!!S.scene;
+ $('dayName').textContent=scene?S.scene.title:S.free?'자유 공방':`${S.day}단 · ${dayNow().name}`;
+ $('dots').innerHTML=S.free||scene?'':dayNow().jobs.map((_,i)=>`<i class="${S.results[i]?.recipe||''}${S.idx===i?' now':''}"></i>`).join('');
+ $('dots').setAttribute('aria-label',`의뢰 ${S.idx+1}/${dayNow().jobs.length}${S.repeating?' · 다시 해요':''}`);
+ $('askTag').textContent=scene?'발견':S.free?'자유':(seed.final?'마감 · ':'')+ASK_KO[seed.ask];
+ $('briefText').textContent=scene?S.scene.text:S.free?'이음매를 마음대로 바꾸고 소리와 곡선을 살펴봐요.':briefText(seed,truth);
+ $('hear').hidden=seed.ask!=='sound'||deliver||scene;$('hear').setAttribute('aria-pressed',String(S.hearing));
+ const g=geo(),job=shownJob(),showCurves=S.free||scene||['score','repair','count'].includes(seed.ask)||deliver,scoreJob=S.free?mineNow():truth;
+ const sk=JSON.stringify([seed.id,scoreJob.joints,showCurves,g.W]);if(sk!==scoreKey){scoreKey=sk;buildScore(g,scoreJob,showCurves);}
+ const hideBells=!!seed.final&&pipe&&!S.free,veiled=count&&seed.reveal!=='before';
+ const pk=JSON.stringify([seed.id,job.joints,g.W,g.row,hideBells]);if(pk!==pipesKey){pipesKey=pk;buildPipes(g,job,{hideBells});}
+ $('pipesWrap').classList.toggle('veiled',veiled);$('veil').hidden=!veiled;$('joints').hidden=scene||!seed.tools;
+ document.querySelectorAll('.joint').forEach(b=>{const k=+b.dataset.k,m=valve&&S.marks?S.marks.find(m=>m.k===k):null;b.disabled=!pipe;b.classList.toggle('bad',pipe?S.bad.includes(k):!!(m&&!m.ok));b.classList.toggle('ok',!!m?.ok);});
+ let text=S.msg.text,tone=S.msg.tone;
+ if(!text){if(count)text=seed.reveal==='before'?'물길의 방울을 보고 골라요.':'악보의 곡선을 보고 골라요.';else if(pipe)text=hideBells?'도움 없이 해요. 이음매를 정하고 검수를 눌러요.':`방울 ${bells(job)}번: ${soundLine(job)}`;else if(valve)text='누르고 있는 동안 물이 흘러요. 이음매에 맞춰 눌렀다 떼어 봐요.';else if(deliver){const c=toCurves(truth);text=`${soundLine(truth)}. 붙임줄 ${c.ties.length}개, 이음줄 ${c.slurs.length}개.`;}}
+ $('readoutText').textContent=text;$('readout').className='readout '+tone;
+ for(const [id,visible]of Object.entries({'g-count':count,'g-pipe':pipe,'g-scene':scene,'g-free':false,'g-valve':valve,'g-deliver':deliver}))$(id).hidden=!visible;
+ if(count){const ch=countChoices(truth,seed.q),ck=seed.id+ch.join();if(ck!==choiceKey){choiceKey=ck;$('choices').innerHTML=ch.map(c=>`<button class="opt" role="radio" data-key="${c}">${countLabel(seed.q,c)}</button>`).join('');}for(const b of $('choices').children){b.setAttribute('aria-checked',String(b.dataset.key===S.picked));b.disabled=S.dead.includes(b.dataset.key);}$('countTrial').hidden=seed.reveal!=='before';$('countTrial').textContent=running()?'멈추기':'물 틀기';}
+ if(pipe){$('tools').hidden=false;document.querySelectorAll('#tools [data-tool]').forEach(b=>{b.hidden=!(seed.tools||'').includes(TOOL_CODE[b.dataset.tool]);b.setAttribute('aria-checked',String(b.dataset.tool===S.tool));});$('trial').textContent=running()?'멈추기':'물 틀기';$('inspect').textContent=S.free?'밸브로 연주':'검수';}
+ if(scene){$('sceneA').setAttribute('aria-pressed',String(S.sceneSide==='a'));$('sceneB').setAttribute('aria-pressed',String(S.sceneSide==='b'));$('sceneTrial').textContent=running()?'멈추기':'물 틀기';if(S.scene.card){$('sceneA').textContent='설명 보기';$('sceneB').textContent='뒷면 보기';}else{$('sceneA').textContent='가';$('sceneB').textContent='나';}}
+ if(valve){$('pad').textContent=S.sub==='countin'?'준비 '+S.label:S.sub==='run'?'밸브':S.sub==='result'?'다시 하려면 눌러요':'누르면 준비 박이 시작해요';$('machine').setAttribute('aria-disabled',String(running()));$('deliverBtn').setAttribute('aria-disabled',String(running()));$('deliverBtn').textContent=S.free?'배관으로':'납품';}
+ if(deliver){const r=S.currentResult||S.results[S.idx]||{recipe:S.assisted?'half':'full',valve:S.valve||'–'};$('rec').textContent=`물길 ${r.recipe==='full'?'● 한 번에':'◐ 도움 받음'} · 밸브 ${r.valve}`;$('next').textContent=S.idx===dayNow().jobs.length-1&&!S.repeating?'마감하기':'다음 의뢰';}
+ document.querySelectorAll('.tutorial').forEach(n=>n.classList.remove('tutorial'));if(!save.settings.tutorialSeen&&!S.free&&!scene){let target=null;if(seed.id==='d0-01'&&count)target=$('countTrial');if(['d1-01','d3-01'].includes(seed.id)&&pipe)target=S.tutorialStep?$('joints').querySelector('button'):$(seed.id==='d1-01'?'tool-tie':'tool-slur');target?.classList.add('tutorial');}$('app').dataset.phase=S.phase;
+ if(!scene&&S.screen==='work'&&lastScreen!=='work'){requestAnimationFrame(()=>{scoreKey='';pipesKey='';render();});}
+ lastScreen='work';checkLow();
+}
+function focusMain(){if(S.screen!=='work'||!$('overlay').hidden)return;const el=S.phase==='count'?$('choices').querySelector('button:not(:disabled)'):S.phase==='pipe'?$('joints').querySelector('button')||$('inspect'):S.phase==='valve'?$('pad'):S.phase==='scene'?$('inspect'):$('next');el?.focus({preventScroll:true});}
+function begin(kind){
+ if(running()&&((kind==='hear'&&S.hearing)||(kind!=='hear'&&!S.hearing))){idle();return;}
+ const bpm=S.free?(S.freeBpm||S.bpm):save.settings.slow?50:60,job=kind==='trial'?shownJob():S.free?mineNow():truthNow();
+ setState({sub:kind==='hear'?'listen':kind==='hand'||kind==='machine'?'countin':kind==='listen'?'listen':'run',hearing:kind==='hear'});
+ audioEngine.setVolume(save.settings.muted?0:save.settings.volume);
+ const started=audioEngine.play(job,{kind,bpm,correctionMs:save.settings.holdOffsetMs});if(!started)setState({sub:'ready',hearing:false});
+}
+let waterFrame=null;
+function drawWater(frame){
+ waterFrame=frame;if(frame.kind==='hear'||S.screen!=='work'||!P.g)return;
+ const beat=Math.max(0,frame.beat),g=P.g;
+ const hand=frame.kind==='hand';
+ document.querySelectorAll('#pipes .water.auto').forEach((r,i)=>{const w=P.waters[i];if(!w)return;let fraction=Math.max(0,Math.min(1,(beat-w.b0)/(w.b1-w.b0)));if(hand){const start=Math.max(w.b0,0),end=Math.min(w.b1,beat);const holds=frame.holds.concat(frame.down!==null?[[frame.down,beat]]:[]);fraction=holds.reduce((v,h)=>v+Math.max(0,Math.min(end,h[1]??beat)-Math.max(start,h[0])),0)/(w.b1-w.b0);}r.setAttribute('width',String(w.w*fraction));});
+ document.querySelectorAll('#pipes .riserWater').forEach((r,i)=>r.style.opacity=beat>=P.risers[i]?.b?'1':'0');
+ document.querySelectorAll('#pipes .bell').forEach((b,i)=>b.classList.toggle('rung',beat>=P.bells[i]?.b&&frame.beat>=0));
+ for(const id of ['head','scoreHead']){const h=$(id);if(h){h.style.opacity=frame.beat>=0?'1':'0';h.setAttribute('x1',g.X(beat));h.setAttribute('x2',g.X(beat));}}
+ $('pad').classList.toggle('down',!!frame.pressed);
+}
+function clearWater(){waterFrame=null;document.querySelectorAll('#pipes .water.auto').forEach(n=>n.setAttribute('width','0'));document.querySelectorAll('.headline').forEach(n=>n.style.opacity='0');$('pad')?.classList.remove('down');}
+const audioEngine=new WorkshopAudio({onState(info){const b=$('soundChip');if(b){b.hidden=info.enabled;b.textContent='소리 켜기';$('hud').classList.toggle('nosound',!info.enabled);}if(S.soundUnavailable!==!info.enabled&&info.state==='unavailable')setState({soundUnavailable:!info.enabled});},onFrame(frame){drawWater(frame);if((frame.beat<0&&S.sub!=='countin')||(frame.beat>=0&&S.sub==='countin')||String(frame.label)!==S.label&&frame.beat<0)setState({sub:frame.beat<0?'countin':frame.kind==='listen'||frame.kind==='hear'?'listen':'run',label:String(frame.label||'')});},onFinish(result){if(S.screen!=='work')return;if(result.kind==='hand'||result.kind==='machine'){const v=result.machine?'기계':({smooth:'매끈',drip:'한 곳 샘',leak:'여러 곳 샘'}[result.judgment?.grade]||'여러 곳 샘');setState({sub:'result',hearing:false,valve:bestValve(S.valve,v),marks:result.judgment?.joints||null,msg:result.machine?{tone:'',text:'기계가 설계도대로 눌렀어요. 보고 따라 해 보세요.'}:valveText(result.judgment)});}else {const hint=result.kind==='listen'&&seedNow().id==='d0-01'?'차이가 들리게 넉넉히 뗐어요. 실제 연주에서는 이만큼 끊지 않아요.':result.kind==='listen'&&seedNow().id==='d3-01'?'틈 없이 이어서 연주하는 것을 레가토라고 해요.':'';setState({sub:'ready',hearing:false,label:'',...(hint?{msg:{tone:'',text:hint}}:{})});}},onAbort(reason){if(S.screen==='work')setState({sub:'ready',hearing:false,label:'',msg:{tone:'warn',text:reason?.text||typeof reason==='string'&&reason||'화면을 떠나서 멈췄어요. 다시 시작해 주세요.'}});}});
+function valveDown(){if(S.phase!=='valve')return;if(!running()){begin('hand');}audioEngine.valveStart();}
+function valveUp(){audioEngine.valveStop();}
+function checkLow(){if(innerHeight>=MIN_H||S.lowOk)return;showModal('<h2>창을 조금 키워 주세요</h2><p>높이 545px부터 작업대가 한 화면에 들어가요.</p><button onclick="continueLow()">그래도 계속하기</button>');}
+function continueLow(){setState({lowOk:true});document.documentElement.classList.add('allow-low');closeModal();}
+function icon(name){const paths={map:'M3 4l6-2 6 2 6-2v18l-6 2-6-2-6 2z M9 2v18m6-16v18',tool:'M14 3a6 6 0 0 0-7 8L2 17l5 5 6-6a6 6 0 0 0 8-7l-5 4-5-5z',lock:'M6 10h12v11H6z M8 10V6a4 4 0 0 1 8 0v4',check:'m5 12 5 5L20 6',sparkle:'M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3z',arrow:'M4 12h16m-6-6 6 6-6 6',home:'M3 10 12 3l9 7v11H3z M9 21v-8h6v8',settings:'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8 M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1z',fullscreen:'M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5',sound:'M3 9h4l5-5v16l-5-5H3z M16 8q5 4 0 8',back:'m14 5-7 7 7 7',play:'m8 4 12 8-12 8z',book:'M3 4h8l1 2 1-2h8v16h-8l-1 2-1-2H3z M12 6v14'};return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[name]||paths.sound}"/></svg>`;}
+function boot(){
+ applyMotion();audioEngine.setVolume(save.settings.muted?0:save.settings.volume);
+ $('sceneA').onclick=()=>S.scene?.card?showModal('<h2>'+S.scene.card.title+'</h2><p>'+S.scene.card.text+'</p><button onclick="closeModal()">알겠어요</button>'):setSceneSide('a');$('sceneB').onclick=()=>S.scene?.card?showModal('<h2>도면 뒷면</h2><p>'+CARD_BACK+(S.scene.card.tag==='plain'?' 차이가 들리게 넉넉히 뗐어요. 실제 연주에서는 이만큼 끊지 않아요.':'')+'</p><button onclick="closeModal()">알겠어요</button>'):setSceneSide('b');$('sceneTrial').onclick=()=>begin('trial');$('sceneNext').onclick=finishScene;$('soundChip').onclick=()=>audioEngine.initialize();
+ $('home').onclick=()=>openScreen('map');$('openSettings').onclick=()=>openScreen('settings');$('fullscreen').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen?.();else document.documentElement.requestFullscreen?.();};
+ $('choices').onclick=e=>{const b=e.target.closest('[data-key]');if(b)pick(b.dataset.key);};$('confirm').onclick=confirmCount;
+ $('tools').onclick=e=>{const b=e.target.closest('[data-tool]');if(b)setState({tool:b.dataset.tool,tutorialStep:1,msg:{tone:'',text:''}});};
+ $('joints').onclick=e=>{const b=e.target.closest('[data-k]');if(b)applyTool(+b.dataset.k);};
+ $('trial').onclick=$('countTrial').onclick=()=>begin('trial');$('hear').onclick=()=>begin('hear');$('inspect').onclick=()=>S.scene?finishScene():inspectNow();
+ $('machine').onclick=()=>{if(!running())begin('machine');};$('deliverBtn').onclick=toDeliver;$('again').onclick=()=>begin('listen');$('next').onclick=nextJob;
+ $('pad').addEventListener('pointerdown',e=>{e.preventDefault();$('pad').setPointerCapture(e.pointerId);valveDown();});$('pad').addEventListener('pointerup',valveUp);$('pad').addEventListener('pointercancel',valveUp);$('pad').addEventListener('lostpointercapture',valveUp);$('pad').oncontextmenu=e=>e.preventDefault();
+ $('pad').addEventListener('keydown',e=>{if([' ','Enter'].includes(e.key)){e.preventDefault();if(!e.repeat)valveDown();}});$('pad').addEventListener('keyup',e=>{if([' ','Enter'].includes(e.key)){e.preventDefault();valveUp();}});
+ document.addEventListener('keydown',e=>{if(e.key==='Tab'&&!$('overlay').hidden){const focusables=[...$('overlayContent').querySelectorAll('button,input,select,[tabindex]')].filter(n=>!n.disabled);const first=focusables[0],last=focusables.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}if(e.key==='Escape'){if(!$('overlay').hidden)closeModal();else openScreen('map');}if(e.key==='0'&&!/INPUT|SELECT/.test(e.target.tagName))$('fullscreen').click();});
+ for(const event of ['click','touchstart','keydown'])document.addEventListener(event,()=>audioEngine.initialize(),{passive:true});
+ let width=innerWidth,height=innerHeight;window.addEventListener('resize',()=>{if(innerWidth===width&&innerHeight===height)return;width=innerWidth;height=innerHeight;if(S.screen==='work'){const old=P.g;const g=geo();if(running()&&(!old||old.W!==g.W||old.row!==g.row||innerHeight<MIN_H))idle();scoreKey='';pipesKey='';render();}});
+ render();if(location.hash==='#layout-only')runLayoutFrame();else if(location.hash==='#test')runTestsScreen();else requestAnimationFrame(()=>{window.__tests=[...runEngineTests(DAYS),...runStorageTests(),...runAudioTests(),...runAppTests()];});
+}
+window.addEventListener('error',e=>{console.error(e.error||e.message);const err=document.createElement('div');err.className='error-box';err.innerHTML='<b>문제가 생겼어요.</b> <button onclick="location.reload()">새로고침</button>';document.body.append(err);},{once:true});
+window.__app={S,get save(){return save;},startDay,startJob,pick,confirmCount,applyTool,inspectNow,toDeliver,nextJob,openScreen,seedNow,truthNow,mineNow,setState,begin,store,audioEngine};
+boot();
+</script></body></html>

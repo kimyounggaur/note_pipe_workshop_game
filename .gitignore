@@ -1,0 +1,6 @@
+/upload/
+/artifacts/
+/node_modules/
+*.zip
+*.tar.gz
+/library-transfer-current/

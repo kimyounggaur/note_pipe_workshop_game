@@ -1,0 +1,107 @@
+// v1.0 의뢰 씨앗(일곱 작업일, 49건). 정답표와 문구는 전부 엔진이 이 씨앗에서 계산한다.
+const DAYS = [
+  { id: "d0", name: "물길 읽기", tools: "", jobs: [
+    { id: "d0-01", ask: "count", q: "bells", reveal: "before", meter: "4/4", notes: "C4/4 D4/4 E4/4 C4/4", joints: "ggg" },
+    { id: "d0-02", ask: "count", q: "bells", reveal: "before", meter: "3/4", notes: "E4/4 G4/4 E4/4", joints: "gg" },
+    { id: "d0-03", ask: "count", q: "longest", reveal: "before", meter: "4/4", notes: "C4/2 E4/4 G4/4", joints: "gg" },
+    { id: "d0-04", ask: "count", q: "bells", meter: "3/4", notes: "E4/4 E4/4 E4/4", joints: "gg" },
+    { id: "d0-05", ask: "count", q: "longest", meter: "3/4", notes: "G4/2 E4/4", joints: "g" },
+    { id: "d0-06", ask: "count", q: "bells", meter: "4/4", notes: "C4/4 C4/4 D4/2", joints: "gg", final: true },
+  ] },
+  { id: "d1", name: "붙이기", tools: "gt", jobs: [
+    { id: "d1-01", ask: "word", meter: "2/4", notes: "C4/4 C4/4", joints: "t" },
+    { id: "d1-02", ask: "count", q: "bells", meter: "2/4", notes: "C4/4 C4/4", joints: "t" },
+    { id: "d1-03", ask: "count", q: "longest", meter: "4/4", notes: "E4/4 E4/4 G4/4 G4/4", joints: "tgg" },
+    { id: "d1-04", ask: "score", meter: "4/4", notes: "C4/4 C4/4 E4/4 E4/4", joints: "tgt" },
+    { id: "d1-05", ask: "score", meter: "4/4", notes: "G4/4 E4/4 E4/4 C4/4", joints: "gtg" },
+    { id: "d1-06", ask: "score", meter: "3/4", notes: "D4/4 D4/4 D4/4", joints: "tg" },
+    { id: "d1-07", ask: "score", meter: "4/4", notes: "E4/4 E4/4 E4/4 C4/4", joints: "gtg", final: true },
+  ] },
+  { id: "d2", name: "붙임의 셈", tools: "gt", jobs: [
+    { id: "d2-01", ask: "word", meter: "4/4", notes: "C4/4 C4/4 D4/4 D4/4", joints: "tgt" },
+    { id: "d2-02", ask: "score", meter: "3/4", notes: "C4/2 C4/4", joints: "t" },
+    { id: "d2-03", ask: "count", q: "longest", meter: "3/4", notes: "G4/4 G4/2", joints: "t" },
+    { id: "d2-04", ask: "score", meter: "2/4", notes: "E4/8 E4/8 G4/4", joints: "tg" },
+    { id: "d2-05", ask: "score", meter: "2/4", notes: "C4/4 E4/4 | E4/4 C4/4", joints: "gtg" },
+    { id: "d2-06", ask: "count", q: "longest", meter: "2/4", notes: "G4/4 A4/4 | A4/2", joints: "gt" },
+    { id: "d2-07", ask: "score", meter: "3/4", notes: "C4/2 C4/8 E4/8", joints: "tg" },
+    { id: "d2-08", ask: "score", meter: "3/4", notes: "C4/2 E4/4 | E4/2 C4/4", joints: "gtg", final: true },
+  ] },
+  { id: "d3", name: "잇기", tools: "gst", jobs: [
+    { id: "d3-01", ask: "word", meter: "3/4", notes: "C4/4 D4/4 E4/4", joints: "ss" },
+    { id: "d3-02", ask: "sound", meter: "4/4", notes: "E4/4 D4/4 C4/2", joints: "ss" },
+    { id: "d3-03", ask: "score", meter: "4/4", notes: "C4/4 D4/4 E4/4 F4/4", joints: "sgs" },
+    { id: "d3-04", ask: "score", meter: "4/4", notes: "G4/4 F4/4 E4/4 C4/4", joints: "ssg" },
+    { id: "d3-05", ask: "sound", meter: "4/4", notes: "C4/4 E4/4 G4/4 E4/4", joints: "gss" },
+    { id: "d3-06", ask: "count", q: "bells", meter: "3/4", notes: "C4/4 D4/4 E4/4", joints: "ss" },
+    { id: "d3-07", ask: "score", meter: "4/4", notes: "A4/4 G4/4 E4/4 D4/4", joints: "gsg", final: true },
+  ] },
+  { id: "d4", name: "곡선 읽기", tools: "gst", jobs: [
+    { id: "d4-01", ask: "score", meter: "4/4", notes: "C4/4 C4/4 D4/4 E4/4", joints: "tgg" },
+    { id: "d4-02", ask: "score", meter: "4/4", notes: "C4/4 D4/4 E4/4 E4/4", joints: "sgg" },
+    { id: "d4-03", ask: "score", meter: "4/4", notes: "E4/4 E4/4 G4/2", joints: "ss" },
+    { id: "d4-04", ask: "count", q: "bells", meter: "3/4", notes: "F4/4 F4/4 A4/4", joints: "ss" },
+    { id: "d4-05", ask: "score", meter: "4/4", notes: "G4/4 G4/4 E4/4 E4/4", joints: "sss" },
+    { id: "d4-06", ask: "score", meter: "4/4", notes: "G4/4 G4/4 E4/4 E4/4", joints: "tgt" },
+    { id: "d4-07", ask: "score", meter: "4/4", notes: "D4/4 D4/4 F4/4 F4/4", joints: "ssg", final: true },
+  ] },
+  { id: "d5", name: "겹친 곡선", tools: "gst", jobs: [
+    { id: "d5-01", ask: "score", meter: "4/4", notes: "C4/4 C4/4 D4/4 E4/4", joints: "tss" },
+    { id: "d5-02", ask: "count", q: "bells", meter: "3/4", notes: "A4/4 G4/4 G4/4", joints: "st" },
+    { id: "d5-03", ask: "score", meter: "4/4", notes: "E4/4 D4/4 C4/4 C4/4", joints: "sst" },
+    { id: "d5-04", ask: "score", meter: "2/4", notes: "E4/4 G4/4 | G4/4 E4/4", joints: "sts" },
+    { id: "d5-05", ask: "count", q: "longest", meter: "2/4", notes: "D4/4 F4/4 | F4/4 D4/4", joints: "sts" },
+    { id: "d5-06", ask: "sound", meter: "4/4", notes: "C4/4 C4/4 D4/4 E4/4", joints: "tss" },
+    { id: "d5-07", ask: "score", meter: "4/4", notes: "G4/4 G4/4 E4/4 C4/4", joints: "tsg", final: true },
+  ] },
+  { id: "d6", name: "수리소", tools: "gst", jobs: [
+    { id: "d6-01", ask: "repair", meter: "4/4", notes: "C4/4 C4/4 D4/4 E4/4", joints: "tss", given: "gss" },
+    { id: "d6-02", ask: "repair", meter: "4/4", notes: "E4/4 E4/4 G4/2", joints: "ss", given: "ts" },
+    { id: "d6-03", ask: "repair", meter: "4/4", notes: "G4/4 F4/4 E4/4 C4/4", joints: "ssg", given: "sgg" },
+    { id: "d6-04", ask: "repair", meter: "4/4", notes: "C4/4 D4/4 E4/4 E4/4", joints: "sgg", given: "sgt" },
+    { id: "d6-05", ask: "repair", meter: "4/4", notes: "G4/4 G4/4 E4/4 E4/4", joints: "sss", given: "tst" },
+    { id: "d6-06", ask: "repair", meter: "2/4", notes: "E4/4 G4/4 | G4/4 E4/4", joints: "sts", given: "gss" },
+    { id: "d6-07", ask: "repair", meter: "4/4", notes: "E4/4 E4/4 D4/4 C4/4", joints: "tsg", given: "gss", final: true },
+  ] },
+];
+
+// 작업일의 통과는 첫 의뢰의 ● 수만으로 계산한다. 밸브와 재의뢰는 제외한다.
+const DAY_INFO = [
+  {day:0, name:"물길 읽기", concept:"가로는 시간, 세로는 높이. 음표마다 방울 하나.", pass:5, count:6, tools:"", discovers:[], cards:["plain"]},
+  {day:1, name:"붙이기", concept:"같은 높이의 이웃한 두 음을 붙이면 길이는 합, 방울은 하나.", pass:6, count:7, tools:"gt", discovers:[], cards:["tie"]},
+  {day:2, name:"붙임의 셈", concept:"붙인 길이를 더하고, 마디선을 넘는 소리를 읽어요.", pass:7, count:8, tools:"gt", discovers:["S1"], cards:["tie-dot","tie-bar","tie-need"]},
+  {day:3, name:"잇기", concept:"이음쇠는 틈을 없애요. 음마다 방울은 남아요.", pass:6, count:7, tools:"gst", discovers:["S2"], cards:["slur"]},
+  {day:4, name:"곡선 읽기", concept:"같은 곡선도 양 끝의 음에 따라 다르게 읽어요.", pass:6, count:7, tools:"gst", discovers:["S3","S4"], cards:["slur-same"]},
+  {day:5, name:"겹친 곡선", concept:"이음줄 안의 붙임줄을 따로 읽어요.", pass:6, count:7, tools:"gst", discovers:[], cards:["tie-in-slur"]},
+  {day:6, name:"수리소", concept:"틀린 물길의 까닭을 알아보고 직접 고쳐요.", pass:6, count:7, tools:"gst", discovers:[], cards:[]},
+];
+const CARD_BACK = "관은 비유예요. 곡선의 이름은 양 끝 음이 정해요.";
+const CARDS = [
+  {tag:"plain", title:"따로 내기", first:"d0-01", text:"곡선이 없으면 음표마다 새로 시작해요. 같은 음도 따로 내요."},
+  {tag:"tie", title:"붙임줄", first:"d1-01", text:"같은 높이의 이웃한 두 음만 잇는 곡선이에요. 뒤의 음은 다시 내지 않고 길이를 더해요."},
+  {tag:"tie-dot", title:"점음표와 같은 길이", first:"d2-02", text:"2박 + 1박 = 3박. 점2분음표 하나와 길이가 같아요."},
+  {tag:"tie-bar", title:"마디선을 넘는 붙임줄", first:"d2-05", text:"마디선을 넘는 소리는 붙임줄로 적어요."},
+  {tag:"tie-need", title:"붙임줄로만 적는 길이", first:"d2-07", text:"2½박은 음표 하나로 적을 수 없어요. 붙임줄로 적어요."},
+  {tag:"slur", title:"이음줄", first:"d3-01", text:"음들을 틈 없이 이어요. 음마다 새로 시작해요. 이렇게 잇는 연주를 레가토라고 해요."},
+  {tag:"slur-same", title:"같은 음이 낀 이음줄", first:"d4-03", text:"곡선이 다른 음까지 덮으면 이음줄이에요. 그 안의 같은 음은 다시 내요."},
+  {tag:"tie-in-slur", title:"이음줄 안의 붙임줄", first:"d5-01", text:"곡선이 둘이에요. 안쪽은 붙임줄, 바깥쪽은 이음줄이에요."},
+].map(card => ({...card, back:CARD_BACK}));
+// 비교 장면은 채점하지 않는다. 두 배치의 소리, 방울, 곡선은 엔진에서 계산한다.
+const SCENES = [
+  {id:"S1", title:"같은 길이, 다른 적기", after:"d2-02", day:2,
+   text:"소리가 같아요. 2박 + 1박 = 3박. 점2분음표 하나로도 적을 수 있어요.",
+   a:{meter:"3/4",notes:"C4/2 C4/4",joints:"t"},
+   b:{meter:"3/4",notes:"C4/2.",joints:""}},
+  {id:"S2", title:"틈이 달라요", before:"d3-01", day:3,
+   text:"음도 방울 수도 같아요. 틈만 달라요. 틈이 없으면 이어서 들려요.",
+   a:{meter:"3/4",notes:"C4/4 D4/4 E4/4",joints:"gg"},
+   b:{meter:"3/4",notes:"C4/4 D4/4 E4/4",joints:"ss"}},
+  {id:"S3", title:"같은 곡선의 두 이름", after:"d4-02", day:4,
+   text:"곡선은 똑같이 생겼어요. 이름은 양 끝의 음이 정해요.",
+   a:{meter:"2/4",notes:"C4/4 C4/4",joints:"t"},
+   b:{meter:"2/4",notes:"C4/4 D4/4",joints:"s"}},
+  {id:"S4", title:"두 미 사이를 보세요", after:"d4-03", day:4,
+   text:"방울이 2번, 3번이에요. 두 미 사이에 따로 곡선이 있는지 보세요.",
+   a:{meter:"4/4",notes:"E4/4 E4/4 G4/2",joints:"ts"},
+   b:{meter:"4/4",notes:"E4/4 E4/4 G4/2",joints:"ss"}},
+];

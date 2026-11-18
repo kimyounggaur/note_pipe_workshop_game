@@ -1,0 +1,87 @@
+{
+  "date": "2026-11-18",
+  "self_tests": {
+    "passed": 68,
+    "total": 68
+  },
+  "journey": {
+    "passed": 8,
+    "total": 8
+  },
+  "viewports": [
+    {
+      "width": 320,
+      "height": 545,
+      "scenes": 133,
+      "failures": 0,
+      "maximumTextLines": 2,
+      "alignmentErrorPx": 1
+    },
+    {
+      "width": 320,
+      "height": 568,
+      "scenes": 133,
+      "failures": 0,
+      "maximumTextLines": 2,
+      "alignmentErrorPx": 1
+    },
+    {
+      "width": 360,
+      "height": 600,
+      "scenes": 133,
+      "failures": 0,
+      "maximumTextLines": 2,
+      "alignmentErrorPx": 1
+    },
+    {
+      "width": 360,
+      "height": 640,
+      "scenes": 133,
+      "failures": 0,
+      "maximumTextLines": 2,
+      "alignmentErrorPx": 1
+    },
+    {
+      "width": 390,
+      "height": 664,
+      "scenes": 133,
+      "failures": 0,
+      "maximumTextLines": 2,
+      "alignmentErrorPx": 1
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "scenes": 133,
+      "failures": 0,
+      "maximumTextLines": 2,
+      "alignmentErrorPx": 1
+    },
+    {
+      "width": 430,
+      "height": 932,
+      "scenes": 133,
+      "failures": 0,
+      "maximumTextLines": 2,
+      "alignmentErrorPx": 1
+    },
+    {
+      "width": 800,
+      "height": 600,
+      "scenes": 133,
+      "failures": 0,
+      "maximumTextLines": 2,
+      "alignmentErrorPx": 1
+    }
+  ],
+  "browser_actions": [
+    "d0 six missions keyboard-only 6/6",
+    "reload resume d0 index2",
+    "d1-01 pipe and machine valve",
+    "Space held4700ms, smooth,1press",
+    "d1-01 delivery tie1 slur0 bell1"
+  ],
+  "physicalDevice": "NOT_RUN",
+  "listening": "NOT_RUN",
+  "instructor": "NOT_RUN"
+}
